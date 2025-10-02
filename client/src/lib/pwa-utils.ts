@@ -1,13 +1,44 @@
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 export class PWAUtils {
+  private static deferredPrompt: BeforeInstallPromptEvent | null = null;
+
   static async registerServiceWorker(): Promise<void> {
     if ('serviceWorker' in navigator) {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
         console.log('Service Worker registered successfully:', registration);
+        
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (newWorker) {
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                this.showToast('New version available! Refresh to update.', 'info');
+              }
+            });
+          }
+        });
       } catch (error) {
         console.error('Service Worker registration failed:', error);
       }
     }
+  }
+
+  static setupInstallPrompt(): void {
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
+      e.preventDefault();
+      this.deferredPrompt = e as BeforeInstallPromptEvent;
+      console.log('Install prompt deferred');
+    });
+
+    window.addEventListener('appinstalled', () => {
+      this.deferredPrompt = null;
+      this.showToast('App installed successfully!', 'success');
+    });
   }
 
   static async shareApp(data?: ShareData): Promise<void> {
@@ -87,8 +118,18 @@ export class PWAUtils {
   }
 
   static async installPWA(): Promise<void> {
-    // This would be handled by the browser's install prompt
-    this.showToast('Add to home screen from your browser menu', 'info');
+    if (this.deferredPrompt) {
+      this.deferredPrompt.prompt();
+      const { outcome } = await this.deferredPrompt.userChoice;
+      console.log(`Install prompt ${outcome}`);
+      this.deferredPrompt = null;
+    } else {
+      this.showToast('Add to home screen from your browser menu', 'info');
+    }
+  }
+
+  static canInstall(): boolean {
+    return this.deferredPrompt !== null;
   }
 
   static formatCurrency(amount: number): string {
