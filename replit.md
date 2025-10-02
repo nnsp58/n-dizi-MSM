@@ -93,7 +93,7 @@ Preferred communication style: Simple, everyday language.
 - Excel exports for inventory and transaction reports
 - Print-friendly invoice previews
 
-**Payment Integration (Razorpay)**
+**Payment Integration (Razorpay) - BETA**
 - Secure payment processing for premium subscriptions
 - Session-authenticated checkout endpoints
 - Server-side payment verification with signature validation
@@ -103,6 +103,20 @@ Preferred communication style: Simple, everyday language.
 - Two subscription tiers: Monthly (₹299/month) and Yearly (₹2,999/year)
 - Order metadata tracking (userId, plan, email) for audit trail
 - Payment.captured webhook events for backup activation flow
+- Hybrid authentication: backend session established during signup/login
+- Graceful offline degradation with console warnings
+
+**Known Limitations:**
+- Session expiry handling: Users may encounter 401 errors if backend session expires without re-login
+- Logout incomplete: Local logout doesn't invalidate server session
+- No UI feedback when backend sync fails during offline signup/login
+- Session refresh flow not implemented - requires re-login for subscription after session expiry
+
+**Recommended Next Steps for Production:**
+1. Implement automatic session refresh or re-authentication flow before checkout
+2. Add clear UI messaging when backend authentication fails
+3. Implement `/api/auth/logout` endpoint and call during logout
+4. Add session status check on subscription page with user-friendly error handling
 
 ## External Dependencies
 

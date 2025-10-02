@@ -56,10 +56,8 @@ export default function Subscription() {
     setIsProcessing(true);
 
     try {
-      const response = await apiRequest('/api/subscription/checkout', {
-        method: 'POST',
-        body: JSON.stringify({ plan }),
-      });
+      const res = await apiRequest('POST', '/api/subscription/checkout', { plan });
+      const response = await res.json();
 
       const { orderId, amount, currency, keyId } = response;
 
@@ -72,14 +70,12 @@ export default function Subscription() {
         order_id: orderId,
         handler: async function (response: any) {
           try {
-            const verifyResponse = await apiRequest('/api/subscription/verify', {
-              method: 'POST',
-              body: JSON.stringify({
-                paymentId: response.razorpay_payment_id,
-                orderId: response.razorpay_order_id,
-                signature: response.razorpay_signature,
-              }),
+            const verifyRes = await apiRequest('POST', '/api/subscription/verify', {
+              paymentId: response.razorpay_payment_id,
+              orderId: response.razorpay_order_id,
+              signature: response.razorpay_signature,
             });
+            const verifyResponse = await verifyRes.json();
 
             if (verifyResponse.success) {
               toast({

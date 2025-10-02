@@ -34,6 +34,22 @@ export const useAuthStore = create<AuthState>()(
             const isPasswordValid = await bcrypt.compare(password, user.password);
             
             if (isPasswordValid) {
+              // Establish backend session for payments
+              try {
+                const response = await fetch('/api/auth/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include',
+                  body: JSON.stringify({ email, password }),
+                });
+
+                if (!response.ok) {
+                  console.warn('Backend login failed, proceeding with local-only auth');
+                }
+              } catch (backendError) {
+                console.warn('Backend login error, proceeding offline:', backendError);
+              }
+
               set({ user, isAuthenticated: true });
               
               // Set first use date if not exists
@@ -55,13 +71,44 @@ export const useAuthStore = create<AuthState>()(
 
       signup: async (userData) => {
         try {
-          // Check if user already exists
+          // Check if user already exists locally
           const existingUser = await db.getUser(userData.email);
           if (existingUser) {
             return false;
           }
 
-          // Hash password before storing
+          // Register with backend first to establish session
+          let backendRegistrationSuccess = false;
+          try {
+            const response = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                email: userData.email,
+                password: userData.password,
+                storeName: userData.storeName,
+                ownerName: userData.ownerName,
+                phone: userData.phone || '',
+                address: userData.address || '',
+              }),
+            });
+
+            if (response.ok) {
+              backendRegistrationSuccess = true;
+            } else {
+              const error = await response.json();
+              console.error('Backend registration failed:', error);
+            }
+          } catch (backendError) {
+            console.error('Backend registration error:', backendError);
+          }
+
+          if (!backendRegistrationSuccess) {
+            console.warn('⚠️ Backend registration failed. App will work offline, but premium subscriptions will not be available.');
+          }
+
+          // Hash password before storing locally
           const hashedPassword = await bcrypt.hash(userData.password, 10);
 
           const newUser: User = {

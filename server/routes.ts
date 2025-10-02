@@ -27,7 +27,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       req.session.userId = user.id;
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
 
+      console.log(`User registered and session set: ${user.id}`);
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
     } catch (error: any) {
@@ -50,7 +57,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
 
+      console.log(`User logged in and session set: ${user.id}`);
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
     } catch (error: any) {
@@ -279,6 +293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/subscription/checkout", async (req, res) => {
     try {
       const userId = req.session.userId;
+      console.log(`Checkout request - session userId: ${userId}`);
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
