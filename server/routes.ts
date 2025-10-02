@@ -238,6 +238,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, message: "Invalid signature" });
       }
 
+      if (user.razorpayPaymentId === paymentId) {
+        return res.json({ success: true, message: "Subscription already activated" });
+      }
+
       const order = await razorpay.orders.fetch(orderId);
       const plan = order.notes?.plan;
       const orderUserId = order.notes?.userId;
@@ -246,7 +250,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ success: false, message: "Invalid order" });
       }
 
-      const endsAt = new Date();
+      const now = new Date();
+      const currentEndsAt = user.subscriptionEndsAt ? new Date(user.subscriptionEndsAt) : now;
+      const baseDate = currentEndsAt > now ? currentEndsAt : now;
+
+      const endsAt = new Date(baseDate);
       if (plan === 'yearly') {
         endsAt.setFullYear(endsAt.getFullYear() + 1);
       } else {
@@ -261,6 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         razorpayOrderId: orderId,
       });
 
+      console.log(`Subscription activated for user ${userId}: ${plan} plan, expires ${endsAt.toISOString()}`);
       res.json({ success: true, message: "Subscription activated" });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -339,7 +348,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const user = await storage.getUserById(notes.userId);
           
           if (user) {
-            const endsAt = new Date();
+            if (user.razorpayPaymentId === payment.id) {
+              console.log(`Webhook: Payment ${payment.id} already processed for user ${notes.userId}`);
+              return res.json({ status: 'ok' });
+            }
+
+            const now = new Date();
+            const currentEndsAt = user.subscriptionEndsAt ? new Date(user.subscriptionEndsAt) : now;
+            const baseDate = currentEndsAt > now ? currentEndsAt : now;
+
+            const endsAt = new Date(baseDate);
             if (notes.plan === 'yearly') {
               endsAt.setFullYear(endsAt.getFullYear() + 1);
             } else {
@@ -353,10 +371,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               razorpayPaymentId: payment.id,
               razorpayOrderId: orderId,
             });
+
+            console.log(`Webhook: Subscription activated for user ${notes.userId}: ${notes.plan} plan, expires ${endsAt.toISOString()}`);
+          } else {
+            console.error(`Webhook: User ${notes.userId} not found for payment ${payment.id}`);
           }
+        } else {
+          console.error(`Webhook: Missing userId or plan in payment notes for payment ${payment.id}`);
         }
       } else if (event.event === 'payment.failed') {
-        console.log('Payment failed:', event.payload.payment.entity);
+        console.error('Webhook: Payment failed:', event.payload.payment.entity.id, event.payload.payment.entity.error_description);
       }
 
       res.json({ status: 'ok' });

@@ -49,17 +49,19 @@ Preferred communication style: Simple, everyday language.
 - Neon serverless PostgreSQL for cloud database
 
 **Database Schema**
-- Users: Authentication and store profile information
-- Products: Inventory items with stock levels, pricing, GST, and expiry tracking
-- Transactions: Sales records with invoice numbers and itemized purchases
-- Settings: User preferences and app configuration stored as JSON
+- Users: Authentication, store profile, subscription status, and Razorpay payment metadata
+- Stores: Multi-store support with user relationships
+- Products: Inventory items with stock levels, pricing, GST, expiry tracking, and store association
+- Transactions: Sales records with invoice numbers, itemized purchases, and store association
+- Settings: User preferences and app configuration stored as JSON with store-level isolation
 
 ### Core Features & Patterns
 
 **Authentication System**
-- Local-first authentication using IndexedDB
-- Bcrypt for password hashing (planned server implementation)
-- Session persistence via Zustand with localStorage
+- Session-based authentication using express-session
+- Bcrypt password hashing for secure credential storage
+- PostgreSQL-backed user authentication with cloud sync
+- Local-first authentication using IndexedDB for offline access
 
 **Inventory Management**
 - CRUD operations for products with code/barcode associations
@@ -91,6 +93,17 @@ Preferred communication style: Simple, everyday language.
 - Excel exports for inventory and transaction reports
 - Print-friendly invoice previews
 
+**Payment Integration (Razorpay)**
+- Secure payment processing for premium subscriptions
+- Session-authenticated checkout endpoints
+- Server-side payment verification with signature validation
+- Webhook support for automated subscription activation
+- Idempotent payment processing to prevent duplicate charges
+- Subscription renewal logic that extends from current expiry date
+- Two subscription tiers: Monthly (₹299/month) and Yearly (₹2,999/year)
+- Order metadata tracking (userId, plan, email) for audit trail
+- Payment.captured webhook events for backup activation flow
+
 ## External Dependencies
 
 ### Frontend Libraries
@@ -105,7 +118,9 @@ Preferred communication style: Simple, everyday language.
 - **@neondatabase/serverless**: Neon PostgreSQL serverless driver
 - **drizzle-orm**: Type-safe SQL query builder and ORM
 - **drizzle-zod**: Zod schema generation from Drizzle schemas
-- **connect-pg-simple**: PostgreSQL session store for Express
+- **express-session**: Session management for authentication
+- **razorpay**: Payment gateway SDK for subscription processing
+- **bcryptjs**: Password hashing for secure authentication
 
 ### UI & Styling
 - **Radix UI**: Headless component primitives (17+ components)
