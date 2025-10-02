@@ -3,11 +3,29 @@ import { useAuthStore } from '@/store/auth-store';
 import { useAlerts } from '@/hooks/use-alerts';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useEffect } from 'react';
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location] = useLocation();
   const { user, logout } = useAuthStore();
   const { totalAlerts } = useAlerts();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: 'fas fa-home' },
@@ -28,25 +46,57 @@ export default function Sidebar() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+
   return (
-    <aside className="w-64 bg-card border-r border-border h-screen sticky top-0 hidden lg:block">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-          <i className="fas fa-store text-white text-lg"></i>
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+          data-testid="overlay-sidebar"
+        />
+      )}
+      
+      {/* Sidebar */}
+      <aside 
+        data-testid="sidebar-nav"
+        style={{
+          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
+        }}
+        className="fixed lg:sticky top-0 left-0 bottom-0 z-50 w-64 bg-card border-r border-border h-screen lg:!transform-none transition-transform duration-300 ease-in-out"
+      >
+        {/* Close button for mobile */}
+        <div className="lg:hidden absolute top-4 right-4 z-10">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={onClose}
+            data-testid="button-close-sidebar"
+          >
+            <i className="fas fa-times text-xl"></i>
+          </Button>
         </div>
-        <div>
-          <h1 className="font-bold text-foreground">n-dizi</h1>
-          <p className="text-xs text-muted-foreground">Store Manager</p>
+
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <i className="fas fa-store text-white text-lg"></i>
+          </div>
+          <div>
+            <h1 className="font-bold text-foreground">n-dizi</h1>
+            <p className="text-xs text-muted-foreground">Store Manager</p>
+          </div>
         </div>
-      </div>
 
       {/* Navigation */}
       <nav className="p-4 space-y-2">
         {navigation.map((item) => (
           <Link key={item.name} href={item.href}>
-            <a 
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+            <button
+              onClick={onClose}
+              data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                 isActive(item.href)
                   ? 'bg-primary/10 text-primary font-medium'
                   : 'hover:bg-muted text-foreground'
@@ -59,7 +109,7 @@ export default function Sidebar() {
                   {item.badge}
                 </span>
               )}
-            </a>
+            </button>
           </Link>
         ))}
       </nav>
@@ -82,7 +132,10 @@ export default function Sidebar() {
           </div>
         </div>
         <Button 
-          onClick={logout}
+          onClick={() => {
+            logout();
+            onClose();
+          }}
           variant="outline"
           size="sm"
           className="w-full"
@@ -93,5 +146,6 @@ export default function Sidebar() {
         </Button>
       </div>
     </aside>
+    </>
   );
 }

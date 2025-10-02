@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -23,6 +23,15 @@ import FeedbackModal from "@/components/modals/feedback-modal";
 
 function Router() {
   const { isAuthenticated } = useAuthStore();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const handleCloseSidebar = useCallback(() => {
+    setIsSidebarOpen(false);
+  }, []);
+
+  const handleOpenSidebar = useCallback(() => {
+    setIsSidebarOpen(true);
+  }, []);
 
   if (!isAuthenticated) {
     return <AuthPage />;
@@ -30,9 +39,9 @@ function Router() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <Sidebar />
+      <Sidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} />
       <div className="flex-1 overflow-hidden">
-        <Header />
+        <Header onMenuClick={handleOpenSidebar} />
         <main className="overflow-auto h-[calc(100vh-4rem)]">
           <Switch>
             <Route path="/" component={Dashboard} />

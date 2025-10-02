@@ -1,11 +1,14 @@
-import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth-store';
 import { useAlerts } from '@/hooks/use-alerts';
 import { PWAUtils } from '@/lib/pwa-utils';
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick: () => void;
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const [location] = useLocation();
   const { logout } = useAuthStore();
   const { totalAlerts } = useAlerts();
@@ -27,7 +30,13 @@ export default function Header() {
     <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-10">
       <div className="flex items-center gap-4">
         {/* Mobile menu button */}
-        <Button variant="ghost" size="sm" className="lg:hidden">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="lg:hidden"
+          onClick={onMenuClick}
+          data-testid="button-menu-toggle"
+        >
           <i className="fas fa-bars text-xl"></i>
         </Button>
         
