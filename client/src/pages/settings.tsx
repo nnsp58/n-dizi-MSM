@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { PWAUtils } from '@/lib/pwa-utils';
+import { SyncManager } from '@/lib/sync';
 import InfoModal from '@/components/modals/info-modal';
 
 const settingsSchema = z.object({
@@ -27,6 +28,7 @@ export default function Settings() {
   const { user, updateUser } = useAuthStore();
   const { forceFeedback } = useFeedback();
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [appSettings, setAppSettings] = useState({
     lowStockAlerts: true,
     expiryAlerts: true,
@@ -55,6 +57,39 @@ export default function Settings() {
       PWAUtils.showToast('Failed to update profile', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSync = async (type: 'push' | 'pull' | 'bidirectional') => {
+    if (!user) return;
+    
+    setSyncing(true);
+    try {
+      let result;
+      switch (type) {
+        case 'push':
+          result = await SyncManager.pushToCloud(user);
+          break;
+        case 'pull':
+          result = await SyncManager.pullFromCloud(user);
+          break;
+        case 'bidirectional':
+          result = await SyncManager.bidirectionalSync(user);
+          break;
+      }
+      
+      if (result.success) {
+        PWAUtils.showToast(result.message, 'success');
+        if (result.syncedAt) {
+          await updateUser({ lastSyncAt: result.syncedAt });
+        }
+      } else {
+        PWAUtils.showToast(result.message, 'error');
+      }
+    } catch (error: any) {
+      PWAUtils.showToast('Sync failed: ' + error.message, 'error');
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -355,6 +390,68 @@ export default function Settings() {
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Cloud Sync */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Cloud Sync</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <p className="text-sm text-muted-foreground mb-2">
+                {user?.lastSyncAt 
+                  ? `Last synced: ${new Date(user.lastSyncAt).toLocaleString()}`
+                  : 'Never synced to cloud'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Backup your data to the cloud and access it from any device.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Button
+                onClick={() => handleSync('push')}
+                disabled={syncing}
+                variant="outline"
+                className="flex flex-col items-center gap-2 h-auto py-4"
+              >
+                <i className="fas fa-cloud-upload-alt text-2xl text-primary"></i>
+                <span className="font-medium">Push to Cloud</span>
+                <span className="text-xs text-muted-foreground">Upload local data</span>
+              </Button>
+
+              <Button
+                onClick={() => handleSync('pull')}
+                disabled={syncing}
+                variant="outline"
+                className="flex flex-col items-center gap-2 h-auto py-4"
+              >
+                <i className="fas fa-cloud-download-alt text-2xl text-primary"></i>
+                <span className="font-medium">Pull from Cloud</span>
+                <span className="text-xs text-muted-foreground">Download cloud data</span>
+              </Button>
+
+              <Button
+                onClick={() => handleSync('bidirectional')}
+                disabled={syncing}
+                className="flex flex-col items-center gap-2 h-auto py-4"
+              >
+                <i className="fas fa-sync-alt text-2xl"></i>
+                <span className="font-medium">Full Sync</span>
+                <span className="text-xs text-muted-foreground">
+                  {syncing ? 'Syncing...' : 'Two-way sync'}
+                </span>
+              </Button>
+            </div>
+
+            <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <i className="fas fa-info-circle mr-2"></i>
+                Cloud sync requires an internet connection and a registered account.
+              </p>
+            </div>
           </CardContent>
         </Card>
 

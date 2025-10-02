@@ -7,6 +7,11 @@ export interface User {
   phone?: string;
   address?: string;
   plan: string;
+  razorpayCustomerId?: string;
+  razorpaySubscriptionId?: string;
+  subscriptionStatus?: string;
+  subscriptionEndsAt?: string;
+  lastSyncAt?: Date | string | null;
   createdAt: string;
 }
 

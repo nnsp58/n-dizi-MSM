@@ -4,6 +4,7 @@ import { eq, and, desc, isNull, or } from "drizzle-orm";
 
 export interface IStorage {
   getUser(email: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
   createUser(insertUser: InsertUser): Promise<User>;
   updateUser(email: string, data: Partial<User>): Promise<User | undefined>;
   
@@ -29,6 +30,11 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   async getUser(email: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async getUserById(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
@@ -105,9 +111,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProduct(userId: string, insertProduct: InsertProduct & { storeId?: string }): Promise<Product> {
+    const now = new Date();
     const [product] = await db
       .insert(products)
-      .values({ ...insertProduct, userId, storeId: insertProduct.storeId || null })
+      .values({ 
+        ...insertProduct, 
+        userId, 
+        storeId: insertProduct.storeId || null,
+        createdAt: now,
+        updatedAt: now,
+      })
       .returning();
     return product;
   }
