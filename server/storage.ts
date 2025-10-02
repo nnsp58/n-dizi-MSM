@@ -5,6 +5,7 @@ import { eq, and, desc, isNull, or } from "drizzle-orm";
 export interface IStorage {
   getUser(email: string): Promise<User | undefined>;
   getUserById(id: string): Promise<User | undefined>;
+  getUserByRazorpayCustomerId(customerId: string): Promise<User | undefined>;
   createUser(insertUser: InsertUser): Promise<User>;
   updateUser(email: string, data: Partial<User>): Promise<User | undefined>;
   
@@ -35,6 +36,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserById(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByRazorpayCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.razorpayCustomerId, customerId));
     return user || undefined;
   }
 

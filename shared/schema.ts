@@ -14,6 +14,8 @@ export const users = pgTable("users", {
   plan: text("plan").notNull().default("free"),
   razorpayCustomerId: text("razorpay_customer_id"),
   razorpaySubscriptionId: text("razorpay_subscription_id"),
+  razorpayPaymentId: text("razorpay_payment_id"),
+  razorpayOrderId: text("razorpay_order_id"),
   subscriptionStatus: text("subscription_status").default("inactive"),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
   lastSyncAt: timestamp("last_sync_at"),

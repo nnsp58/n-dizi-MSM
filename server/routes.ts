@@ -2,6 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import bcrypt from "bcryptjs";
+import { razorpay, verifyWebhookSignature, SUBSCRIPTION_PLANS } from "./razorpay";
+import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -24,6 +26,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         address,
       });
 
+      req.session.userId = user.id;
+
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
     } catch (error: any) {
@@ -44,6 +48,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!isValid) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
+
+      req.session.userId = user.id;
 
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
@@ -201,6 +207,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ store });
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/subscription/verify", async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { paymentId, orderId, signature } = req.body;
+      
+      if (!paymentId || !orderId || !signature) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const generatedSignature = crypto
+        .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+        .update(`${orderId}|${paymentId}`)
+        .digest('hex');
+
+      if (generatedSignature !== signature) {
+        return res.status(400).json({ success: false, message: "Invalid signature" });
+      }
+
+      const order = await razorpay.orders.fetch(orderId);
+      const plan = order.notes?.plan;
+      const orderUserId = order.notes?.userId;
+
+      if (!plan || orderUserId !== userId) {
+        return res.status(400).json({ success: false, message: "Invalid order" });
+      }
+
+      const endsAt = new Date();
+      if (plan === 'yearly') {
+        endsAt.setFullYear(endsAt.getFullYear() + 1);
+      } else {
+        endsAt.setMonth(endsAt.getMonth() + 1);
+      }
+
+      await storage.updateUser(user.email, {
+        subscriptionStatus: 'active',
+        plan: 'pro',
+        subscriptionEndsAt: endsAt,
+        razorpayPaymentId: paymentId,
+        razorpayOrderId: orderId,
+      });
+
+      res.json({ success: true, message: "Subscription activated" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/subscription/checkout", async (req, res) => {
+    try {
+      const userId = req.session.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const { plan } = req.body;
+      
+      if (!plan) {
+        return res.status(400).json({ message: "plan is required" });
+      }
+
+      const planConfig = SUBSCRIPTION_PLANS[plan as keyof typeof SUBSCRIPTION_PLANS];
+      if (!planConfig) {
+        return res.status(400).json({ message: "Invalid plan" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const options = {
+        amount: planConfig.amount,
+        currency: planConfig.currency,
+        receipt: `receipt_${plan}_${userId}_${Date.now()}`,
+        notes: {
+          userId: userId,
+          plan: plan,
+          email: user.email,
+        },
+      };
+
+      const order = await razorpay.orders.create(options);
+
+      res.json({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        keyId: process.env.RAZORPAY_KEY_ID,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/webhooks/razorpay", async (req, res) => {
+    try {
+      const signature = req.headers['x-razorpay-signature'] as string;
+      
+      if (!signature) {
+        return res.status(400).json({ message: "Missing signature" });
+      }
+
+      const isValid = verifyWebhookSignature(req.rawBody as Buffer, signature);
+      if (!isValid) {
+        console.error('Invalid webhook signature');
+        return res.status(400).json({ message: "Invalid signature" });
+      }
+
+      const event = req.body;
+
+      if (event.event === 'payment.captured') {
+        const payment = event.payload.payment.entity;
+        const orderId = payment.order_id;
+        const notes = payment.notes;
+
+        if (notes && notes.userId && notes.plan) {
+          const user = await storage.getUserById(notes.userId);
+          
+          if (user) {
+            const endsAt = new Date();
+            if (notes.plan === 'yearly') {
+              endsAt.setFullYear(endsAt.getFullYear() + 1);
+            } else {
+              endsAt.setMonth(endsAt.getMonth() + 1);
+            }
+
+            await storage.updateUser(user.email, {
+              subscriptionStatus: 'active',
+              plan: 'pro',
+              subscriptionEndsAt: endsAt,
+              razorpayPaymentId: payment.id,
+              razorpayOrderId: orderId,
+            });
+          }
+        }
+      } else if (event.event === 'payment.failed') {
+        console.log('Payment failed:', event.payload.payment.entity);
+      }
+
+      res.json({ status: 'ok' });
+    } catch (error: any) {
+      console.error('Webhook error:', error);
       res.status(500).json({ message: error.message });
     }
   });
