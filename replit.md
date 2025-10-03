@@ -53,7 +53,8 @@ Preferred communication style: Simple, everyday language.
 - Stores: Multi-store support with user relationships
 - Operators: Store staff/employees (up to 5 per owner) with role assignment and sales attribution
 - Products: Inventory items with stock levels, pricing, GST, expiry tracking, and store association
-- Transactions: Sales records with invoice numbers, itemized purchases, operator tracking, and store association
+- Transactions: Sales records with invoice numbers, itemized purchases, operator tracking, returnedItems tracking, and store association
+- Returns: Return records with transactionId reference, returnedItems (jsonb), refundAmount, reason, and status
 - Settings: User preferences and app configuration stored as JSON with store-level isolation
 
 ### Core Features & Patterns
@@ -98,6 +99,24 @@ Preferred communication style: Simple, everyday language.
   - "Inactive" badges for former/removed operators
   - Historical data preserved even after operator deletion
   - Fallback "Former Employee" entry for deleted operators
+
+**Returns & Refunds System**
+- Complete post-sale return processing workflow
+- Invoice lookup by invoice number with validation
+- Item-level return selection with quantity control
+- Automatic inventory restoration on return approval
+- Return tracking in transaction records to prevent over-refunding
+- Aggregated return quantities per product across multiple returns
+- Smart validation: cannot return more than (purchased - already returned)
+- Visual indicators for already-returned quantities with badges
+- Optional return reason field for documentation
+- Returns history with status tracking (completed/pending)
+- Zustand-based returns store with localStorage persistence
+- Database schema: `returns` table with transactionId reference
+- Transaction.returnedItems field tracks cumulative returns per product
+- Input fields automatically disabled when all units returned
+- Mobile-responsive design with clear UX feedback
+- Integrated into sidebar navigation and dashboard quick access
 
 **Scanner Integration**
 - Camera-based QR/barcode scanning using jsQR
