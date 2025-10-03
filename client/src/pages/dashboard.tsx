@@ -55,6 +55,14 @@ export default function Dashboard() {
       testId: 'quick-reports'
     },
     {
+      name: 'Returns & Refunds',
+      description: 'Process product returns',
+      icon: 'fas fa-undo',
+      href: '/returns',
+      color: 'bg-pink-500',
+      testId: 'quick-returns'
+    },
+    {
       name: 'Alerts',
       description: 'Low stock & notifications',
       icon: 'fas fa-bell',

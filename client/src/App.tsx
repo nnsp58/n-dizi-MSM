@@ -14,6 +14,7 @@ import Dashboard from "@/pages/dashboard";
 import Inventory from "@/pages/inventory";
 import POS from "@/pages/pos";
 import Reports from "@/pages/reports";
+import Returns from "@/pages/returns";
 import Alerts from "@/pages/alerts";
 import Operators from "@/pages/operators";
 import Subscription from "@/pages/subscription";
@@ -49,6 +50,7 @@ function Router() {
             <Route path="/inventory" component={Inventory} />
             <Route path="/pos" component={POS} />
             <Route path="/reports" component={Reports} />
+            <Route path="/returns" component={Returns} />
             <Route path="/alerts" component={Alerts} />
             <Route path="/operators" component={Operators} />
             <Route path="/subscription" component={Subscription} />

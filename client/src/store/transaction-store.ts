@@ -11,6 +11,7 @@ interface TransactionState {
   getRecentTransactions: (limit?: number) => Transaction[];
   getTransactionsByDateRange: (startDate: Date, endDate: Date) => Transaction[];
   getTodaysTransactions: () => Transaction[];
+  getTransactionByInvoice: (invoiceNumber: string) => Transaction | undefined;
   getReportStats: (startDate?: Date, endDate?: Date) => ReportStats;
 }
 
@@ -75,6 +76,11 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       const transactionDate = new Date(t.createdAt);
       return transactionDate >= startOfDay && transactionDate < endOfDay;
     });
+  },
+
+  getTransactionByInvoice: (invoiceNumber) => {
+    const { transactions } = get();
+    return transactions.find(t => t.invoiceNumber === invoiceNumber);
   },
 
   getReportStats: (startDate, endDate) => {

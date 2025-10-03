@@ -32,6 +32,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Inventory', href: '/inventory', icon: 'fas fa-boxes' },
     { name: 'Point of Sale', href: '/pos', icon: 'fas fa-cash-register' },
     { name: 'Reports', href: '/reports', icon: 'fas fa-chart-line' },
+    { name: 'Returns & Refunds', href: '/returns', icon: 'fas fa-undo' },
     { name: 'Alerts', href: '/alerts', icon: 'fas fa-bell', badge: totalAlerts > 0 ? totalAlerts : undefined },
     { name: 'Operators', href: '/operators', icon: 'fas fa-users' },
     { name: 'Subscription', href: '/subscription', icon: 'fas fa-crown' },

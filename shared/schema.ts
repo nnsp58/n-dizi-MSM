@@ -90,6 +90,20 @@ export const settings = pgTable("settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const returns = pgTable("returns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  storeId: varchar("store_id").references(() => stores.id, { onDelete: "set null" }),
+  transactionId: varchar("transaction_id").notNull().references(() => transactions.id, { onDelete: "cascade" }),
+  returnedItems: jsonb("returned_items").notNull(),
+  refundAmount: real("refund_amount").notNull(),
+  reason: text("reason"),
+  status: text("status").notNull().default("completed"),
+  lastSyncAt: timestamp("last_sync_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -138,11 +152,21 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   operatorId: true,
 });
 
+export const insertReturnSchema = createInsertSchema(returns).pick({
+  transactionId: true,
+  returnedItems: true,
+  refundAmount: true,
+  reason: true,
+  status: true,
+  storeId: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type InsertOperator = z.infer<typeof insertOperatorSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
+export type InsertReturn = z.infer<typeof insertReturnSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
@@ -150,6 +174,7 @@ export type Store = typeof stores.$inferSelect;
 export type Operator = typeof operators.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
+export type Return = typeof returns.$inferSelect;
 
 export interface CartItem extends Product {
   cartQuantity: number;
