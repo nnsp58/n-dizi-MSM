@@ -3,11 +3,20 @@ import { useInventoryStore } from '@/store/inventory-store';
 import { usePOSStore } from '@/store/pos-store';
 import { useTransactionStore } from '@/store/transaction-store';
 import { useAuthStore } from '@/store/auth-store';
+import { useOperatorsStore } from '@/store/operators-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PWAUtils } from '@/lib/pwa-utils';
 import { pdfGenerator } from '@/lib/pdf-generator';
 import ScannerModal from '@/components/modals/scanner-modal';
@@ -28,12 +37,15 @@ export default function POS() {
     setSearchQuery 
   } = usePOSStore();
   const { addTransaction } = useTransactionStore();
+  const { operators, currentOperatorId, setCurrentOperator } = useOperatorsStore();
 
   const [showScanner, setShowScanner] = useState(false);
   const [scannerType, setScannerType] = useState<'qr' | 'barcode'>('qr');
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [currentInvoice, setCurrentInvoice] = useState<InvoiceData | null>(null);
   const [showMobileCart, setShowMobileCart] = useState(false);
+
+  const activeOperators = operators.filter(op => op.isActive);
 
   const cartTotals = getCartTotal();
 
@@ -217,6 +229,33 @@ export default function POS() {
               <span data-testid="text-total">{PWAUtils.formatCurrency(cartTotals.total)}</span>
             </div>
           </div>
+
+          {activeOperators.length > 0 && (
+            <div className="mb-4">
+              <Label htmlFor="operator-select" className="text-sm mb-2 block">
+                <i className="fas fa-user mr-2"></i>
+                Select Operator (Optional)
+              </Label>
+              <Select
+                value={currentOperatorId || 'owner'}
+                onValueChange={(value) => setCurrentOperator(value === 'owner' ? null : value)}
+              >
+                <SelectTrigger id="operator-select" data-testid="select-operator">
+                  <SelectValue placeholder="Select operator" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="owner">
+                    {user?.ownerName || 'Owner'} (You)
+                  </SelectItem>
+                  {activeOperators.map((op) => (
+                    <SelectItem key={op.id} value={op.id}>
+                      {op.name} ({op.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Button

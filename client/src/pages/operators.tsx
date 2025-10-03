@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '@/store/auth-store';
+import { useOperatorsStore, Operator } from '@/store/operators-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,19 +22,9 @@ import {
 } from '@/components/ui/select';
 import { PWAUtils } from '@/lib/pwa-utils';
 
-interface Operator {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  role: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
 export default function Operators() {
   const { user } = useAuthStore();
-  const [operators, setOperators] = useState<Operator[]>([]);
+  const { operators, addOperator, updateOperator, deleteOperator } = useOperatorsStore();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingOperator, setEditingOperator] = useState<Operator | null>(null);
   const [formData, setFormData] = useState({
@@ -62,7 +53,7 @@ export default function Operators() {
       createdAt: new Date().toISOString(),
     };
 
-    setOperators([...operators, newOperator]);
+    addOperator(newOperator);
     setFormData({ name: '', email: '', phone: '', role: 'operator' });
     setShowAddModal(false);
     PWAUtils.showToast('Operator added successfully', 'success');
@@ -74,25 +65,22 @@ export default function Operators() {
       return;
     }
 
-    setOperators(operators.map(op => 
-      op.id === editingOperator.id 
-        ? { ...op, ...formData }
-        : op
-    ));
+    updateOperator(editingOperator.id, formData);
     setEditingOperator(null);
     setFormData({ name: '', email: '', phone: '', role: 'operator' });
     PWAUtils.showToast('Operator updated successfully', 'success');
   };
 
   const handleToggleStatus = (id: string) => {
-    setOperators(operators.map(op => 
-      op.id === id ? { ...op, isActive: !op.isActive } : op
-    ));
-    PWAUtils.showToast('Status updated', 'success');
+    const operator = operators.find(op => op.id === id);
+    if (operator) {
+      updateOperator(id, { isActive: !operator.isActive });
+      PWAUtils.showToast('Status updated', 'success');
+    }
   };
 
   const handleDeleteOperator = (id: string) => {
-    setOperators(operators.filter(op => op.id !== id));
+    deleteOperator(id);
     PWAUtils.showToast('Operator removed', 'success');
   };
 
