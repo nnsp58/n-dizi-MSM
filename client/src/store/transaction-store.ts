@@ -8,6 +8,7 @@ interface TransactionState {
   
   loadTransactions: () => Promise<void>;
   addTransaction: (items: CartItem[], totals: { subtotal: number; gst: number; total: number }) => Promise<string>;
+  updateTransactionReturnedItems: (transactionId: string, returnedItems: any[]) => Promise<void>;
   getRecentTransactions: (limit?: number) => Transaction[];
   getTransactionsByDateRange: (startDate: Date, endDate: Date) => Transaction[];
   getTodaysTransactions: () => Transaction[];
@@ -39,6 +40,7 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
       id: crypto.randomUUID(),
       invoiceNumber,
       items,
+      returnedItems: [],
       subtotal: totals.subtotal,
       gst: totals.gst,
       total: totals.total,
@@ -51,6 +53,48 @@ export const useTransactionStore = create<TransactionState>((set, get) => ({
     set({ transactions: [transaction, ...transactions] });
     
     return invoiceNumber;
+  },
+
+  updateTransactionReturnedItems: async (transactionId, returnedItems) => {
+    const { transactions } = get();
+    const transaction = transactions.find(t => t.id === transactionId);
+    
+    if (transaction) {
+      // Merge returned items instead of appending to avoid duplicates
+      const existingReturns = transaction.returnedItems || [];
+      const mergedReturns = [...existingReturns];
+      
+      // Add new returns, merging quantities for same products
+      returnedItems.forEach(newItem => {
+        const existingIndex = mergedReturns.findIndex(
+          r => r.productId === newItem.productId
+        );
+        
+        if (existingIndex >= 0) {
+          // Product already has returns - aggregate quantities
+          mergedReturns[existingIndex] = {
+            ...mergedReturns[existingIndex],
+            returnQuantity: mergedReturns[existingIndex].returnQuantity + newItem.returnQuantity
+          };
+        } else {
+          // New product return
+          mergedReturns.push(newItem);
+        }
+      });
+      
+      const updatedTransaction = {
+        ...transaction,
+        returnedItems: mergedReturns
+      };
+      
+      await db.updateTransaction(transactionId, { returnedItems: mergedReturns });
+      
+      set({
+        transactions: transactions.map(t => 
+          t.id === transactionId ? updatedTransaction : t
+        )
+      });
+    }
   },
 
   getRecentTransactions: (limit = 5) => {

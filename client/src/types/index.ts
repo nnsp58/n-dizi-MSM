@@ -38,6 +38,11 @@ export interface Transaction {
   id: string;
   invoiceNumber: string;
   items: CartItem[];
+  returnedItems?: Array<{
+    productId: string;
+    name: string;
+    returnQuantity: number;
+  }>;
   subtotal: number;
   gst: number;
   total: number;

@@ -10,15 +10,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PWAUtils } from '@/lib/pwa-utils';
-import { CartItem } from '@/types';
+import { Transaction, CartItem } from '@/types';
 
 export default function Returns() {
-  const { transactions, getTransactionByInvoice } = useTransactionStore();
+  const { transactions, getTransactionByInvoice, updateTransactionReturnedItems } = useTransactionStore();
   const { addReturn, getAllReturns } = useReturnsStore();
   const { products, updateProduct } = useInventoryStore();
   
   const [invoiceSearch, setInvoiceSearch] = useState('');
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [returnQuantities, setReturnQuantities] = useState<Record<string, number>>({});
   const [returnReason, setReturnReason] = useState('');
   const [showReturnsList, setShowReturnsList] = useState(false);
@@ -42,10 +42,25 @@ export default function Returns() {
     }
   };
 
-  const handleQuantityChange = (productId: string, quantity: number) => {
+  const getAlreadyReturnedQuantity = (productId: string): number => {
+    if (!selectedTransaction?.returnedItems) return 0;
+    
+    // Aggregate all returns for this product (in case of multiple returns)
+    return selectedTransaction.returnedItems
+      .filter(item => item.productId === productId)
+      .reduce((total, item) => total + item.returnQuantity, 0);
+  };
+
+  const getMaxReturnableQuantity = (item: CartItem): number => {
+    const alreadyReturned = getAlreadyReturnedQuantity(item.id);
+    return item.cartQuantity - alreadyReturned;
+  };
+
+  const handleQuantityChange = (productId: string, quantity: number, maxAllowed: number) => {
+    const clampedQuantity = Math.max(0, Math.min(quantity, maxAllowed));
     setReturnQuantities(prev => ({
       ...prev,
-      [productId]: Math.max(0, quantity)
+      [productId]: clampedQuantity
     }));
   };
 
@@ -84,6 +99,24 @@ export default function Returns() {
       return;
     }
 
+    // Validate that return quantities don't exceed available quantities
+    for (const item of selectedItemsForReturn) {
+      const originalItem = selectedTransaction.items.find(i => i.id === item.productId);
+      if (!originalItem) {
+        PWAUtils.showToast(`Product ${item.name} not found in original transaction`, 'error');
+        return;
+      }
+
+      const maxReturnable = getMaxReturnableQuantity(originalItem);
+      if (item.returnQuantity > maxReturnable) {
+        PWAUtils.showToast(
+          `Cannot return ${item.returnQuantity} units of ${item.name}. Maximum returnable: ${maxReturnable}`,
+          'error'
+        );
+        return;
+      }
+    }
+
     try {
       // Process return
       const returnId = await addReturn(
@@ -92,6 +125,15 @@ export default function Returns() {
         selectedItemsForReturn,
         returnReason
       );
+
+      // Update transaction with returned items
+      const returnedItemsToAdd = selectedItemsForReturn.map(item => ({
+        productId: item.productId,
+        name: item.name,
+        returnQuantity: item.returnQuantity
+      }));
+      
+      await updateTransactionReturnedItems(selectedTransaction.id, returnedItemsToAdd);
 
       // Update inventory - add returned items back to stock
       for (const item of selectedItemsForReturn) {
@@ -194,36 +236,47 @@ export default function Returns() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {selectedTransaction.items.map((item: CartItem) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                        data-testid={`return-item-${item.id}`}
-                      >
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">{item.code}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Sold Quantity: {item.cartQuantity} | Price: {PWAUtils.formatCurrency(item.price)}
-                          </p>
+                    {selectedTransaction.items.map((item: CartItem) => {
+                      const maxReturnable = getMaxReturnableQuantity(item);
+                      const alreadyReturned = getAlreadyReturnedQuantity(item.id);
+                      
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center justify-between p-4 border rounded-lg"
+                          data-testid={`return-item-${item.id}`}
+                        >
+                          <div className="flex-1">
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-sm text-muted-foreground">{item.code}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Sold: {item.cartQuantity} | Available to return: {maxReturnable} | Price: {PWAUtils.formatCurrency(item.price)}
+                            </p>
+                            {alreadyReturned > 0 && (
+                              <Badge variant="secondary" className="mt-1">
+                                Already returned: {alreadyReturned}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Label htmlFor={`return-qty-${item.id}`} className="text-sm whitespace-nowrap">
+                              Return Qty:
+                            </Label>
+                            <Input
+                              id={`return-qty-${item.id}`}
+                              type="number"
+                              min="0"
+                              max={maxReturnable}
+                              value={returnQuantities[item.id] || 0}
+                              onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0, maxReturnable)}
+                              className="w-20"
+                              data-testid={`input-return-qty-${item.id}`}
+                              disabled={maxReturnable === 0}
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <Label htmlFor={`return-qty-${item.id}`} className="text-sm whitespace-nowrap">
-                            Return Qty:
-                          </Label>
-                          <Input
-                            id={`return-qty-${item.id}`}
-                            type="number"
-                            min="0"
-                            max={item.cartQuantity}
-                            value={returnQuantities[item.id] || 0}
-                            onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 0)}
-                            className="w-20"
-                            data-testid={`input-return-qty-${item.id}`}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   <div className="mt-6">

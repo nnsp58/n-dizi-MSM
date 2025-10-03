@@ -72,6 +72,7 @@ export const transactions = pgTable("transactions", {
   operatorId: varchar("operator_id").references(() => operators.id, { onDelete: "set null" }),
   invoiceNumber: text("invoice_number").notNull(),
   items: jsonb("items").notNull(),
+  returnedItems: jsonb("returned_items"),
   subtotal: real("subtotal").notNull(),
   gst: real("gst").notNull(),
   total: real("total").notNull(),

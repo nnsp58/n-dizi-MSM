@@ -124,6 +124,19 @@ class DatabaseManager {
     return `INV${String(maxNumber + 1).padStart(5, '0')}`;
   }
 
+  async updateTransaction(id: string, updates: Partial<Transaction>): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+    
+    const transaction = this.db.transaction(['transactions'], 'readwrite');
+    const store = transaction.objectStore('transactions');
+    const existing = await this.promisifyRequest(store.get(id));
+    
+    if (existing) {
+      const updated = { ...existing, ...updates };
+      await this.promisifyRequest(store.put(updated));
+    }
+  }
+
   // Settings operations
   async saveSetting(key: string, value: any): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
