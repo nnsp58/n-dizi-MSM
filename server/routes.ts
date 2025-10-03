@@ -72,6 +72,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/feedback", async (req, res) => {
+    try {
+      const { userId, category, rating, subject, message } = req.body;
+      
+      if (!userId || !subject || !message) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+
+      const feedbackItem = await storage.createFeedback(userId, {
+        category: category || 'general',
+        rating: rating || 5,
+        subject,
+        message,
+      });
+
+      res.json(feedbackItem);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/feedback", async (req, res) => {
+    try {
+      const { userId, status } = req.query;
+      
+      const feedbackList = await storage.getFeedback(
+        userId as string | undefined,
+        status as string | undefined
+      );
+
+      res.json(feedbackList);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/feedback/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const feedbackItem = await storage.getFeedbackById(id);
+      if (!feedbackItem) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+
+      res.json(feedbackItem);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/feedback/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, adminResponse } = req.body;
+      
+      const data: any = {};
+      if (status) data.status = status;
+      if (adminResponse) {
+        data.adminResponse = adminResponse;
+        data.adminRespondedAt = new Date();
+      }
+
+      const feedbackItem = await storage.updateFeedback(id, data);
+      if (!feedbackItem) {
+        return res.status(404).json({ message: "Feedback not found" });
+      }
+
+      res.json(feedbackItem);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/sync/pull", async (req, res) => {
     try {
       const { userId, lastSyncAt, storeId } = req.body;
