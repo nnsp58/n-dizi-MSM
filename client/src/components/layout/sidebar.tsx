@@ -60,7 +60,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose();
+          }}
           data-testid="overlay-sidebar"
         />
       )}
@@ -68,17 +72,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside 
         data-testid="sidebar-nav"
-        style={{
-          transform: isOpen ? 'translateX(0)' : 'translateX(-100%)',
-        }}
-        className="fixed lg:sticky top-0 left-0 bottom-0 z-50 w-64 bg-card border-r border-border h-screen lg:!transform-none transition-transform duration-300 ease-in-out"
+        className={`fixed lg:sticky top-0 left-0 bottom-0 z-50 w-64 bg-card border-r border-border h-screen transition-transform duration-300 ease-in-out ${
+          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
       >
         {/* Close button for mobile */}
         <div className="lg:hidden absolute top-4 right-4 z-10">
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
             data-testid="button-close-sidebar"
           >
             <i className="fas fa-times text-xl"></i>
@@ -100,10 +107,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <nav className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         {/* Main Navigation */}
         {navigation.map((item) => (
-          <Link key={item.name} href={item.href} onClick={() => {
-            onClose();
-          }}>
+          <Link key={item.name} href={item.href}>
             <button
+              onClick={(e) => {
+                onClose();
+              }}
               data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                 isActive(item.href)
@@ -133,10 +141,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               </div>
             </div>
             {adminNavigation.map((item) => (
-              <Link key={item.name} href={item.href} onClick={() => {
-                onClose();
-              }}>
+              <Link key={item.name} href={item.href}>
                 <button
+                  onClick={(e) => {
+                    onClose();
+                  }}
                   data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                     isActive(item.href)
@@ -171,7 +180,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
         <Button 
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             logout();
             onClose();
           }}
