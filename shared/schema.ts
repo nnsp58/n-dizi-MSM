@@ -52,10 +52,24 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const operators = pgTable("operators", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  storeId: varchar("store_id").references(() => stores.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  role: text("role").notNull().default("operator"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   storeId: varchar("store_id").references(() => stores.id, { onDelete: "set null" }),
+  operatorId: varchar("operator_id").references(() => operators.id, { onDelete: "set null" }),
   invoiceNumber: text("invoice_number").notNull(),
   items: jsonb("items").notNull(),
   subtotal: real("subtotal").notNull(),
@@ -105,6 +119,15 @@ export const insertStoreSchema = createInsertSchema(stores).pick({
   isActive: true,
 });
 
+export const insertOperatorSchema = createInsertSchema(operators).pick({
+  name: true,
+  email: true,
+  phone: true,
+  role: true,
+  isActive: true,
+  storeId: true,
+});
+
 export const insertTransactionSchema = createInsertSchema(transactions).pick({
   invoiceNumber: true,
   items: true,
@@ -112,16 +135,19 @@ export const insertTransactionSchema = createInsertSchema(transactions).pick({
   gst: true,
   total: true,
   storeId: true,
+  operatorId: true,
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertStore = z.infer<typeof insertStoreSchema>;
+export type InsertOperator = z.infer<typeof insertOperatorSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Store = typeof stores.$inferSelect;
+export type Operator = typeof operators.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
 

@@ -51,8 +51,9 @@ Preferred communication style: Simple, everyday language.
 **Database Schema**
 - Users: Authentication, store profile, subscription status, and Razorpay payment metadata
 - Stores: Multi-store support with user relationships
+- Operators: Store staff/employees (up to 5 per owner) with role assignment and sales attribution
 - Products: Inventory items with stock levels, pricing, GST, expiry tracking, and store association
-- Transactions: Sales records with invoice numbers, itemized purchases, and store association
+- Transactions: Sales records with invoice numbers, itemized purchases, operator tracking, and store association
 - Settings: User preferences and app configuration stored as JSON with store-level isolation
 
 ### Core Features & Patterns
