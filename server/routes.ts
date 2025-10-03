@@ -75,11 +75,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/feedback", async (req, res) => {
     try {
-      const { userId, category, rating, subject, message } = req.body;
+      const { category, rating, subject, message } = req.body;
       
+      if (!req.session.userId) {
+        console.log('[Feedback API] Unauthorized - no session');
+        return res.status(401).json({ message: "Please login to submit feedback" });
+      }
+
+      const userId = req.session.userId;
       console.log('[Feedback API] Received request:', { userId, category, rating, subject: subject?.substring(0, 20), hasMessage: !!message });
       
-      if (!userId || !subject || !message) {
+      if (!subject || !message) {
         console.log('[Feedback API] Missing required fields');
         return res.status(400).json({ message: "Missing required fields" });
       }
@@ -102,26 +108,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/feedback", async (req, res) => {
     try {
-      const { userId, status } = req.query;
+      console.log('[GET /api/feedback] Session userId:', req.session.userId);
       
+      if (!req.session.userId) {
+        console.log('[GET /api/feedback] No session - returning 401');
+        return res.status(401).json({ message: "Please login to view feedback" });
+      }
+
+      const { userId: queryUserId, status } = req.query;
+      
+      let userId: string | undefined = req.session.userId;
+      console.log('[GET /api/feedback] Using userId from session:', userId);
+      
+      if (queryUserId && queryUserId !== req.session.userId) {
+        console.log('[GET /api/feedback] Query userId different from session, checking admin');
+        const requestingUser = await storage.getUserById(req.session.userId);
+        if (!requestingUser?.isAdmin) {
+          console.log('[GET /api/feedback] Non-admin trying to access other user - returning 403');
+          return res.status(403).json({ message: "Unauthorized: Admin access required" });
+        }
+        userId = queryUserId as string;
+        console.log('[GET /api/feedback] Admin access granted, using query userId:', userId);
+      }
+      
+      console.log('[GET /api/feedback] Fetching feedback for userId:', userId);
       const feedbackList = await storage.getFeedback(
-        userId as string | undefined,
+        userId,
         status as string | undefined
       );
+      console.log('[GET /api/feedback] Found', feedbackList.length, 'feedback items');
+      if (feedbackList.length > 0) {
+        console.log('[GET /api/feedback] First feedback userId:', feedbackList[0].userId);
+      }
 
       res.json(feedbackList);
     } catch (error: any) {
+      console.error('[GET /api/feedback] Error:', error);
       res.status(500).json({ message: error.message });
     }
   });
 
   app.get("/api/feedback/:id", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Please login to view feedback" });
+      }
+
       const { id } = req.params;
       
       const feedbackItem = await storage.getFeedbackById(id);
       if (!feedbackItem) {
         return res.status(404).json({ message: "Feedback not found" });
+      }
+
+      const requestingUser = await storage.getUserById(req.session.userId);
+      if (feedbackItem.userId !== req.session.userId && !requestingUser?.isAdmin) {
+        return res.status(403).json({ message: "Unauthorized: You can only view your own feedback" });
       }
 
       res.json(feedbackItem);
@@ -132,6 +174,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/feedback/:id", async (req, res) => {
     try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Please login" });
+      }
+
+      const requestingUser = await storage.getUserById(req.session.userId);
+      if (!requestingUser?.isAdmin) {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+
       const { id } = req.params;
       const { status, adminResponse } = req.body;
       

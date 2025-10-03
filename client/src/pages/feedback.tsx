@@ -22,12 +22,8 @@ export default function FeedbackPage() {
   const [message, setMessage] = useState('');
 
   const { data: userFeedback = [], isLoading: isLoadingFeedback } = useQuery<Feedback[]>({
-    queryKey: ['/api/feedback', user?.id],
+    queryKey: ['/api/feedback'],
     enabled: !!user,
-    queryFn: async () => {
-      const res = await fetch(`/api/feedback?userId=${user?.id}`);
-      return res.json();
-    }
   });
 
   const submitFeedbackMutation = useMutation({
@@ -57,15 +53,6 @@ export default function FeedbackPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!user?.id) {
-      toast({
-        title: 'Error',
-        description: 'Please login to submit feedback',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     if (!subject.trim() || !message.trim()) {
       toast({
         title: 'Error',
@@ -76,7 +63,6 @@ export default function FeedbackPage() {
     }
 
     submitFeedbackMutation.mutate({
-      userId: user.id,
       category,
       rating,
       subject,
