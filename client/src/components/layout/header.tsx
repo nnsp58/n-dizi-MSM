@@ -28,24 +28,24 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <header className="bg-card border-b border-border px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-      <div className="flex items-center gap-4">
-        {/* Mobile menu button */}
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button - More prominent */}
         <Button 
-          variant="ghost" 
-          size="sm" 
-          className="lg:hidden"
+          variant="outline" 
+          size="icon" 
+          className="lg:hidden border-2 border-primary/20 hover:border-primary hover:bg-primary/10"
           onClick={onMenuClick}
           data-testid="button-menu-toggle"
         >
-          <i className="fas fa-bars text-xl"></i>
+          <i className="fas fa-bars text-2xl text-primary"></i>
         </Button>
         
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2">
-          <i className="fas fa-store text-primary"></i>
+          <i className="fas fa-store text-primary text-lg"></i>
           <div className="flex flex-col">
-            <span className="font-bold text-foreground">MSM</span>
-            <span className="text-xs text-muted-foreground">Multipurpose Store Management</span>
+            <span className="font-bold text-foreground text-base">MSM</span>
+            <span className="text-xs text-muted-foreground leading-tight">Multipurpose Store Management</span>
           </div>
         </div>
         

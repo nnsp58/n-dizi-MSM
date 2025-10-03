@@ -39,6 +39,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     { name: 'Settings', href: '/settings', icon: 'fas fa-cog' }
   ];
 
+  const adminNavigation = [
+    { name: 'Admin Dashboard', href: '/admin/dashboard', icon: 'fas fa-chart-pie' },
+    { name: 'Manage Feedback', href: '/admin/feedback', icon: 'fas fa-comments' },
+  ];
+
   const isActive = (href: string) => {
     if (href === '/') return location === '/';
     return location.startsWith(href);
@@ -92,7 +97,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2">
+      <nav className="p-4 space-y-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+        {/* Main Navigation */}
         {navigation.map((item) => (
           <Link key={item.name} href={item.href} onClick={() => {
             onClose();
@@ -115,6 +121,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             </button>
           </Link>
         ))}
+
+        {/* Admin Navigation - Only visible for admin users */}
+        {user?.isAdmin && (
+          <>
+            <div className="pt-4 pb-2">
+              <div className="px-4 py-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Admin Controls
+                </p>
+              </div>
+            </div>
+            {adminNavigation.map((item) => (
+              <Link key={item.name} href={item.href} onClick={() => {
+                onClose();
+              }}>
+                <button
+                  data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
+                    isActive(item.href)
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'hover:bg-muted text-foreground'
+                  }`}
+                >
+                  <i className={`${item.icon} w-5`}></i>
+                  <span>{item.name}</span>
+                </button>
+              </Link>
+            ))}
+          </>
+        )}
       </nav>
 
       {/* User Profile */}
