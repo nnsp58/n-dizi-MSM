@@ -64,6 +64,14 @@ export default function Dashboard() {
       testId: 'quick-alerts'
     },
     {
+      name: 'Operators',
+      description: 'Manage store staff',
+      icon: 'fas fa-users',
+      href: '/operators',
+      color: 'bg-cyan-500',
+      testId: 'quick-operators'
+    },
+    {
       name: 'Settings',
       description: 'Store profile & preferences',
       icon: 'fas fa-cog',
