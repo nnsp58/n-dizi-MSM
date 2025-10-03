@@ -1,15 +1,22 @@
 import { useState, useMemo } from 'react';
 import { useTransactionStore } from '@/store/transaction-store';
+import { useOperatorsStore } from '@/store/operators-store';
+import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PWAUtils } from '@/lib/pwa-utils';
 import { excelExporter } from '@/lib/excel-export';
 
 export default function Reports() {
+  const { user } = useAuthStore();
   const { transactions, getTransactionsByDateRange, getReportStats } = useTransactionStore();
+  const { operators } = useOperatorsStore();
+  const [activeTab, setActiveTab] = useState('sales');
   const [selectedPeriod, setSelectedPeriod] = useState('This Month');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -17,7 +24,7 @@ export default function Reports() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { filteredTransactions, reportStats } = useMemo(() => {
+  const { filteredTransactions, reportStats, operatorPerformance } = useMemo(() => {
     let filtered = transactions;
     let startDateObj: Date | undefined;
     let endDateObj: Date | undefined;
@@ -72,8 +79,61 @@ export default function Reports() {
 
     const stats = getReportStats(startDateObj, endDateObj);
 
-    return { filteredTransactions: filtered, reportStats: stats };
-  }, [transactions, selectedPeriod, startDate, endDate, searchQuery, getTransactionsByDateRange, getReportStats]);
+    // Calculate operator performance
+    const operatorStats = new Map<string, { name: string; sales: number; revenue: number; transactions: number; isActive: boolean }>();
+    
+    // Add owner stats
+    operatorStats.set('owner', {
+      name: user?.ownerName || 'Owner',
+      sales: 0,
+      revenue: 0,
+      transactions: 0,
+      isActive: true
+    });
+
+    // Add all current operators
+    operators.forEach(op => {
+      operatorStats.set(op.id, {
+        name: op.name,
+        sales: 0,
+        revenue: 0,
+        transactions: 0,
+        isActive: op.isActive
+      });
+    });
+
+    // Calculate stats from transactions
+    filtered.forEach(transaction => {
+      const operatorId = (transaction as any).operatorId || 'owner';
+      let stat = operatorStats.get(operatorId);
+      
+      // If operator not found (deleted/removed), create fallback entry
+      if (!stat) {
+        stat = {
+          name: 'Former Employee',
+          sales: 0,
+          revenue: 0,
+          transactions: 0,
+          isActive: false
+        };
+        operatorStats.set(operatorId, stat);
+      }
+      
+      stat.transactions += 1;
+      stat.sales += transaction.items.reduce((sum, item) => sum + item.cartQuantity, 0);
+      stat.revenue += transaction.total;
+    });
+
+    const performanceArray = Array.from(operatorStats.entries())
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    return { 
+      filteredTransactions: filtered, 
+      reportStats: stats,
+      operatorPerformance: performanceArray
+    };
+  }, [transactions, selectedPeriod, startDate, endDate, searchQuery, getTransactionsByDateRange, getReportStats, operators, user]);
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -111,31 +171,48 @@ export default function Reports() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Sales Reports</h1>
-          <p className="text-muted-foreground">View and export your sales data</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Reports & Analytics</h1>
+          <p className="text-muted-foreground">View sales data and operator performance</p>
         </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={handleExportExcel}
-            variant="secondary"
-            className="flex items-center gap-2"
-          >
-            <i className="fas fa-file-excel"></i>
-            <span className="hidden sm:inline">Export Excel</span>
-          </Button>
-          <Button
-            onClick={handleExportCSV}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <i className="fas fa-file-csv"></i>
-            <span className="hidden sm:inline">Export CSV</span>
-          </Button>
-        </div>
+        {activeTab === 'sales' && (
+          <div className="flex gap-3">
+            <Button
+              onClick={handleExportExcel}
+              variant="secondary"
+              className="flex items-center gap-2"
+              data-testid="button-export-excel"
+            >
+              <i className="fas fa-file-excel"></i>
+              <span className="hidden sm:inline">Export Excel</span>
+            </Button>
+            <Button
+              onClick={handleExportCSV}
+              variant="outline"
+              className="flex items-center gap-2"
+              data-testid="button-export-csv"
+            >
+              <i className="fas fa-file-csv"></i>
+              <span className="hidden sm:inline">Export CSV</span>
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Date Range Filter */}
-      <Card className="mb-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="sales" data-testid="tab-sales">
+            <i className="fas fa-chart-line mr-2"></i>
+            Sales Report
+          </TabsTrigger>
+          <TabsTrigger value="operators" data-testid="tab-operators">
+            <i className="fas fa-users mr-2"></i>
+            Operator Performance
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sales">
+          {/* Date Range Filter */}
+          <Card className="mb-6">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex items-center gap-3">
@@ -376,6 +453,155 @@ export default function Reports() {
           )}
         </CardContent>
       </Card>
+      </TabsContent>
+
+      <TabsContent value="operators">
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-foreground whitespace-nowrap">Period:</label>
+                <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Today">Today</SelectItem>
+                    <SelectItem value="Yesterday">Yesterday</SelectItem>
+                    <SelectItem value="Last 7 Days">Last 7 Days</SelectItem>
+                    <SelectItem value="Last 30 Days">Last 30 Days</SelectItem>
+                    <SelectItem value="This Month">This Month</SelectItem>
+                    <SelectItem value="Last Month">Last Month</SelectItem>
+                    <SelectItem value="Custom Range">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedPeriod === 'Custom Range' && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground">From:</label>
+                    <Input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground">To:</label>
+                    <Input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-40"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Top Performer</p>
+                <i className="fas fa-trophy text-yellow-500"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-foreground">
+                {operatorPerformance[0]?.name || 'N/A'}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {operatorPerformance[0] ? PWAUtils.formatCurrency(operatorPerformance[0].revenue) : '₹0'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Total Operators</p>
+                <i className="fas fa-users text-green-500"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-foreground">{operators.length + 1}</h3>
+              <p className="text-sm text-muted-foreground mt-1">Including owner</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Active This Period</p>
+                <i className="fas fa-chart-line text-purple-500"></i>
+              </div>
+              <h3 className="text-2xl font-bold text-foreground">
+                {operatorPerformance.filter(op => op.transactions > 0).length}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">Made sales</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Operator Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Rank</TableHead>
+                    <TableHead>Operator Name</TableHead>
+                    <TableHead className="text-right">Transactions</TableHead>
+                    <TableHead className="text-right">Items Sold</TableHead>
+                    <TableHead className="text-right">Total Revenue</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {operatorPerformance.map((op, index) => (
+                    <TableRow key={op.id} data-testid={`operator-row-${op.id}`} className={!op.isActive ? 'opacity-60' : ''}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {index === 0 && <i className="fas fa-trophy text-yellow-500"></i>}
+                          {index === 1 && <i className="fas fa-medal text-gray-400"></i>}
+                          {index === 2 && <i className="fas fa-award text-orange-600"></i>}
+                          <span className="font-medium">#{index + 1}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {op.name}
+                          {!op.isActive && (
+                            <Badge variant="secondary" className="text-xs">
+                              Inactive
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{op.transactions}</TableCell>
+                      <TableCell className="text-right">{op.sales}</TableCell>
+                      <TableCell className="text-right font-bold">
+                        {PWAUtils.formatCurrency(op.revenue)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {operatorPerformance.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                        No operator data for this period
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }
