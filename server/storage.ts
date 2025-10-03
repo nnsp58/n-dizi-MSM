@@ -1,4 +1,4 @@
-import { users, stores, products, transactions, settings, type User, type Store, type Product, type Transaction, type Settings, type InsertUser, type InsertStore, type InsertProduct, type InsertTransaction } from "@shared/schema";
+import { users, stores, products, transactions, settings, feedback, type User, type Store, type Product, type Transaction, type Settings, type Feedback, type InsertUser, type InsertStore, type InsertProduct, type InsertTransaction, type InsertFeedback } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, isNull, or } from "drizzle-orm";
 
@@ -26,6 +26,11 @@ export interface IStorage {
   
   getSetting(userId: string, key: string, storeId?: string): Promise<Settings | undefined>;
   saveSetting(userId: string, key: string, value: any, storeId?: string): Promise<Settings>;
+  
+  getFeedback(userId?: string, status?: string): Promise<Feedback[]>;
+  getFeedbackById(id: string): Promise<Feedback | undefined>;
+  createFeedback(userId: string, insertFeedback: InsertFeedback): Promise<Feedback>;
+  updateFeedback(id: string, data: Partial<Feedback>): Promise<Feedback | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -212,6 +217,51 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return setting;
     }
+  }
+
+  async getFeedback(userId?: string, status?: string): Promise<Feedback[]> {
+    const conditions = [];
+    if (userId) {
+      conditions.push(eq(feedback.userId, userId));
+    }
+    if (status) {
+      conditions.push(eq(feedback.status, status));
+    }
+    
+    if (conditions.length > 0) {
+      return await db
+        .select()
+        .from(feedback)
+        .where(and(...conditions))
+        .orderBy(desc(feedback.createdAt));
+    } else {
+      return await db
+        .select()
+        .from(feedback)
+        .orderBy(desc(feedback.createdAt));
+    }
+  }
+
+  async getFeedbackById(id: string): Promise<Feedback | undefined> {
+    const [feedbackItem] = await db.select().from(feedback).where(eq(feedback.id, id));
+    return feedbackItem || undefined;
+  }
+
+  async createFeedback(userId: string, insertFeedback: InsertFeedback): Promise<Feedback> {
+    const [feedbackItem] = await db
+      .insert(feedback)
+      .values({ ...insertFeedback, userId, updatedAt: new Date() })
+      .returning();
+    return feedbackItem;
+  }
+
+  async updateFeedback(id: string, data: Partial<Feedback>): Promise<Feedback | undefined> {
+    const [feedbackItem] = await db
+      .update(feedback)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(feedback.id, id))
+      .returning();
+    return feedbackItem || undefined;
   }
 }
 
