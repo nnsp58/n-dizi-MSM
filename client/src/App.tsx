@@ -20,6 +20,7 @@ import Operators from "@/pages/operators";
 import Subscription from "@/pages/subscription";
 import Settings from "@/pages/settings";
 import Feedback from "@/pages/feedback";
+import AdminFeedbackManagement from "@/pages/admin/feedback-management";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FeedbackModal from "@/components/modals/feedback-modal";
@@ -57,6 +58,7 @@ function Router() {
             <Route path="/subscription" component={Subscription} />
             <Route path="/settings" component={Settings} />
             <Route path="/feedback" component={Feedback} />
+            <Route path="/admin/feedback" component={AdminFeedbackManagement} />
             <Route component={Dashboard} />
           </Switch>
           

@@ -9,7 +9,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, storeName, ownerName, phone, address } = req.body;
+      const { email, password, storeName, storeType, ownerName, phone, address } = req.body;
       
       const existing = await storage.getUser(email);
       if (existing) {
@@ -21,6 +21,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         password: hashedPassword,
         storeName,
+        storeType: storeType || 'general',
         ownerName,
         phone,
         address,
@@ -76,10 +77,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, category, rating, subject, message } = req.body;
       
+      console.log('[Feedback API] Received request:', { userId, category, rating, subject: subject?.substring(0, 20), hasMessage: !!message });
+      
       if (!userId || !subject || !message) {
+        console.log('[Feedback API] Missing required fields');
         return res.status(400).json({ message: "Missing required fields" });
       }
 
+      console.log('[Feedback API] Attempting to create feedback...');
       const feedbackItem = await storage.createFeedback(userId, {
         category: category || 'general',
         rating: rating || 5,
@@ -87,8 +92,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message,
       });
 
+      console.log('[Feedback API] Feedback created successfully:', feedbackItem.id);
       res.json(feedbackItem);
     } catch (error: any) {
+      console.error('[Feedback API] Error:', error.message, error.stack);
       res.status(500).json({ message: error.message });
     }
   });

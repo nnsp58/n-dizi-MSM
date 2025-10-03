@@ -250,7 +250,7 @@ export class DatabaseStorage implements IStorage {
   async createFeedback(userId: string, insertFeedback: InsertFeedback): Promise<Feedback> {
     const [feedbackItem] = await db
       .insert(feedback)
-      .values({ ...insertFeedback, userId, updatedAt: new Date() })
+      .values({ ...insertFeedback, userId })
       .returning();
     return feedbackItem;
   }
