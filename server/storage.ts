@@ -1,6 +1,6 @@
-import { users, stores, products, transactions, settings, feedback, type User, type Store, type Product, type Transaction, type Settings, type Feedback, type InsertUser, type InsertStore, type InsertProduct, type InsertTransaction, type InsertFeedback } from "@shared/schema";
+import { users, stores, products, transactions, settings, feedback, userActivity, notificationLogs, type User, type Store, type Product, type Transaction, type Settings, type Feedback, type InsertUser, type InsertStore, type InsertProduct, type InsertTransaction, type InsertFeedback } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, isNull, or } from "drizzle-orm";
+import { eq, and, desc, isNull, or, count, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(email: string): Promise<User | undefined>;
@@ -31,6 +31,21 @@ export interface IStorage {
   getFeedbackById(id: string): Promise<Feedback | undefined>;
   createFeedback(userId: string, insertFeedback: InsertFeedback): Promise<Feedback>;
   updateFeedback(id: string, data: Partial<Feedback>): Promise<Feedback | undefined>;
+  
+  getAdminStats(): Promise<{
+    totalUsers: number;
+    totalFeedback: number;
+    pendingFeedback: number;
+    resolvedFeedback: number;
+    feedbackByCategory: { category: string; count: number }[];
+    feedbackByRating: { rating: number; count: number }[];
+    recentActivity: any[];
+  }>;
+  
+  logUserActivity(userId: string, activityType: string, description?: string, metadata?: any): Promise<void>;
+  
+  createNotificationLog(title: string, message: string, targetAudience?: string, targetUserIds?: string[], sentBy?: string): Promise<any>;
+  updateFCMToken(userId: string, fcmToken: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -263,6 +278,100 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return feedbackItem || undefined;
   }
+
+  async getAdminStats() {
+    const [totalUsersResult] = await db.select({ count: count() }).from(users);
+    const totalUsers = totalUsersResult?.count || 0;
+
+    const [totalFeedbackResult] = await db.select({ count: count() }).from(feedback);
+    const totalFeedback = totalFeedbackResult?.count || 0;
+
+    const [pendingFeedbackResult] = await db
+      .select({ count: count() })
+      .from(feedback)
+      .where(eq(feedback.status, 'pending'));
+    const pendingFeedback = pendingFeedbackResult?.count || 0;
+
+    const [resolvedFeedbackResult] = await db
+      .select({ count: count() })
+      .from(feedback)
+      .where(eq(feedback.status, 'resolved'));
+    const resolvedFeedback = resolvedFeedbackResult?.count || 0;
+
+    const feedbackByCategoryRaw = await db
+      .select({
+        category: feedback.category,
+        count: count(),
+      })
+      .from(feedback)
+      .groupBy(feedback.category);
+    
+    const feedbackByCategory = feedbackByCategoryRaw.map(item => ({
+      category: item.category,
+      count: Number(item.count),
+    }));
+
+    const feedbackByRatingRaw = await db
+      .select({
+        rating: feedback.rating,
+        count: count(),
+      })
+      .from(feedback)
+      .groupBy(feedback.rating);
+    
+    const feedbackByRating = feedbackByRatingRaw.map(item => ({
+      rating: item.rating,
+      count: Number(item.count),
+    }));
+
+    const recentActivity = await db
+      .select()
+      .from(userActivity)
+      .orderBy(desc(userActivity.createdAt))
+      .limit(10);
+
+    return {
+      totalUsers,
+      totalFeedback,
+      pendingFeedback,
+      resolvedFeedback,
+      feedbackByCategory,
+      feedbackByRating,
+      recentActivity,
+    };
+  }
+
+  async logUserActivity(userId: string, activityType: string, description?: string, metadata?: any): Promise<void> {
+    await db.insert(userActivity).values({
+      userId,
+      activityType,
+      description,
+      metadata: metadata ? JSON.stringify(metadata) : null,
+    });
+  }
+
+  async createNotificationLog(title: string, message: string, targetAudience?: string, targetUserIds?: string[], sentBy?: string) {
+    const [notification] = await db
+      .insert(notificationLogs)
+      .values({
+        title,
+        message,
+        targetAudience: targetAudience || 'all',
+        targetUserIds: targetUserIds ? JSON.stringify(targetUserIds) : null,
+        sentBy: sentBy || null,
+        sentAt: new Date(),
+      })
+      .returning();
+    return notification;
+  }
+
+  async updateFCMToken(userId: string, fcmToken: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ fcmToken })
+      .where(eq(users.id, userId));
+  }
 }
+
 
 export const storage = new DatabaseStorage();

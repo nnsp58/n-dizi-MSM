@@ -43,7 +43,10 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2">
           <i className="fas fa-store text-primary"></i>
-          <span className="font-bold text-foreground">n-dizi</span>
+          <div className="flex flex-col">
+            <span className="font-bold text-foreground">MSM</span>
+            <span className="text-xs text-muted-foreground">Multipurpose Store Management</span>
+          </div>
         </div>
         
         <h1 className="text-2xl font-bold text-foreground hidden lg:block">

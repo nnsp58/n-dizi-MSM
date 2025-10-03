@@ -21,6 +21,7 @@ import Subscription from "@/pages/subscription";
 import Settings from "@/pages/settings";
 import Feedback from "@/pages/feedback";
 import AdminFeedbackManagement from "@/pages/admin/feedback-management";
+import AdminDashboard from "@/pages/admin/dashboard";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FeedbackModal from "@/components/modals/feedback-modal";
@@ -58,6 +59,7 @@ function Router() {
             <Route path="/subscription" component={Subscription} />
             <Route path="/settings" component={Settings} />
             <Route path="/feedback" component={Feedback} />
+            <Route path="/admin/dashboard" component={AdminDashboard} />
             <Route path="/admin/feedback" component={AdminFeedbackManagement} />
             <Route component={Dashboard} />
           </Switch>
@@ -66,7 +68,7 @@ function Router() {
           <footer className="bg-card border-t border-border mt-12 py-6">
             <div className="px-4 md:px-8 text-center">
               <p className="text-muted-foreground text-sm">
-                Presented by <span className="font-semibold text-foreground">n-dizi</span> | 
+                Presented by <span className="font-semibold text-foreground">n-dizi.in</span> | 
                 <button 
                   onClick={() => PWAUtils.shareApp()} 
                   className="text-primary hover:underline mx-2"

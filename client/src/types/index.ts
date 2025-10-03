@@ -7,6 +7,8 @@ export interface User {
   ownerName: string;
   phone?: string;
   address?: string;
+  isAdmin?: boolean;
+  fcmToken?: string;
   plan: string;
   razorpayCustomerId?: string;
   razorpaySubscriptionId?: string;

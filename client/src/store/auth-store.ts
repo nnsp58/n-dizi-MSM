@@ -35,6 +35,7 @@ export const useAuthStore = create<AuthState>()(
             
             if (isPasswordValid) {
               // Establish backend session for payments
+              let backendUser = null;
               try {
                 const response = await fetch('/api/auth/login', {
                   method: 'POST',
@@ -43,14 +44,29 @@ export const useAuthStore = create<AuthState>()(
                   body: JSON.stringify({ email, password }),
                 });
 
-                if (!response.ok) {
+                if (response.ok) {
+                  const data = await response.json();
+                  backendUser = data.user;
+                } else {
                   console.warn('Backend login failed, proceeding with local-only auth');
                 }
               } catch (backendError) {
                 console.warn('Backend login error, proceeding offline:', backendError);
               }
 
-              set({ user, isAuthenticated: true });
+              // Merge backend user data (includes isAdmin, fcmToken) with local user data
+              const mergedUser = backendUser ? { ...user, ...backendUser } : user;
+              
+              // Persist merged user data back to IndexedDB for offline access
+              if (backendUser) {
+                try {
+                  await db.saveUser(mergedUser);
+                } catch (dbError) {
+                  console.warn('Failed to persist merged user to IndexedDB:', dbError);
+                }
+              }
+              
+              set({ user: mergedUser, isAuthenticated: true });
               
               // Set first use date if not exists
               const firstUseDate = localStorage.getItem('firstUseDate');

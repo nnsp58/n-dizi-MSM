@@ -86,8 +86,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <i className="fas fa-store text-white text-lg"></i>
           </div>
           <div>
-            <h1 className="font-bold text-foreground">n-dizi</h1>
-            <p className="text-xs text-muted-foreground">Store Manager</p>
+            <h1 className="font-bold text-foreground">MSM</h1>
+            <p className="text-xs text-muted-foreground">Multipurpose Store Management</p>
           </div>
         </div>
 

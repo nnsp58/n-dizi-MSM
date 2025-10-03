@@ -36,6 +36,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log(`User registered and session set: ${user.id}`);
+      
+      // Log user registration activity
+      await storage.logUserActivity(user.id, 'user_registration', `New user registered: ${user.email}`);
+      
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
     } catch (error: any) {
@@ -66,6 +70,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log(`User logged in and session set: ${user.id}`);
+      
+      // Log user login activity
+      await storage.logUserActivity(user.id, 'user_login', `User logged in: ${user.email}`);
+      
       const { password: _, ...userWithoutPassword } = user;
       res.json({ user: userWithoutPassword });
     } catch (error: any) {
@@ -99,6 +107,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log('[Feedback API] Feedback created successfully:', feedbackItem.id);
+      
+      // Log feedback submission activity
+      await storage.logUserActivity(userId, 'feedback_submitted', `Submitted feedback: ${subject}`, { category, rating });
+      
       res.json(feedbackItem);
     } catch (error: any) {
       console.error('[Feedback API] Error:', error.message, error.stack);
@@ -200,6 +212,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(feedbackItem);
     } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/admin/stats", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Please login" });
+      }
+
+      const requestingUser = await storage.getUserById(req.session.userId);
+      if (!requestingUser?.isAdmin) {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+
+      const stats = await storage.getAdminStats();
+      res.json(stats);
+    } catch (error: any) {
+      console.error('[Admin Stats API] Error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/admin/notifications/send", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Please login" });
+      }
+
+      const requestingUser = await storage.getUserById(req.session.userId);
+      if (!requestingUser?.isAdmin) {
+        return res.status(403).json({ message: "Unauthorized: Admin access required" });
+      }
+
+      const { title, message, targetAudience, targetUserIds } = req.body;
+
+      if (!title || !message) {
+        return res.status(400).json({ message: "Title and message are required" });
+      }
+
+      // Create notification log
+      const notification = await storage.createNotificationLog(
+        title,
+        message,
+        targetAudience,
+        targetUserIds,
+        req.session.userId
+      );
+
+      // TODO: Integrate with Firebase Cloud Messaging (FCM)
+      // This is where you would send actual push notifications via FCM
+      // Example:
+      // await sendFirebaseNotification({
+      //   title,
+      //   message,
+      //   tokens: fcmTokens
+      // });
+
+      console.log('[Push Notification] Created notification log:', notification.id);
+      console.log('[Push Notification] Note: Firebase FCM integration pending');
+
+      res.json({
+        success: true,
+        notification,
+        message: "Notification logged. Firebase integration pending."
+      });
+    } catch (error: any) {
+      console.error('[Push Notification API] Error:', error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/user/fcm-token", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Please login" });
+      }
+
+      const { fcmToken } = req.body;
+
+      if (!fcmToken) {
+        return res.status(400).json({ message: "FCM token is required" });
+      }
+
+      await storage.updateFCMToken(req.session.userId, fcmToken);
+
+      res.json({ success: true, message: "FCM token updated" });
+    } catch (error: any) {
+      console.error('[FCM Token API] Error:', error);
       res.status(500).json({ message: error.message });
     }
   });
