@@ -43,8 +43,8 @@ export class PWAUtils {
 
   static async shareApp(data?: ShareData): Promise<void> {
     const defaultData: ShareData = {
-      title: 'n-dizi Store Manager',
-      text: 'Manage your shop with ease using n-dizi Store Manager - Complete offline-first PWA solution!',
+      title: 'MSM - Multipurpose Store Management',
+      text: 'Manage your shop with ease using MSM (Multipurpose Store Management) - Complete offline-first PWA solution! Presented by n-dizi.in',
       url: window.location.href
     };
 

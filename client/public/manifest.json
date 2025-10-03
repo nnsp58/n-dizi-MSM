@@ -1,7 +1,7 @@
 {
-  "name": "n-dizi Store Manager",
-  "short_name": "n-dizi",
-  "description": "Complete offline-first shop management PWA with inventory tracking, POS, and invoice generation",
+  "name": "MSM - Multipurpose Store Management",
+  "short_name": "MSM",
+  "description": "Complete offline-first shop management PWA with inventory tracking, POS, and invoice generation. Presented by n-dizi.in",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f8fafc",
