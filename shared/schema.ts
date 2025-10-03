@@ -8,6 +8,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   storeName: text("store_name").notNull(),
+  storeType: text("store_type").notNull().default("general"),
   ownerName: text("owner_name").notNull(),
   phone: text("phone"),
   address: text("address"),
@@ -26,6 +27,7 @@ export const stores = pgTable("stores", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  storeType: text("store_type").notNull().default("general"),
   address: text("address"),
   phone: text("phone"),
   gstNumber: text("gst_number"),
@@ -42,6 +44,7 @@ export const products = pgTable("products", {
   name: text("name").notNull(),
   category: text("category"),
   quantity: integer("quantity").notNull().default(0),
+  unit: text("unit").default("pieces"),
   price: real("price").notNull(),
   gst: integer("gst").notNull().default(0),
   lowStockThreshold: integer("low_stock_threshold").default(0),
@@ -109,6 +112,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
   storeName: true,
+  storeType: true,
   ownerName: true,
   phone: true,
   address: true,
@@ -119,6 +123,7 @@ export const insertProductSchema = createInsertSchema(products).pick({
   name: true,
   category: true,
   quantity: true,
+  unit: true,
   price: true,
   gst: true,
   lowStockThreshold: true,
@@ -128,6 +133,7 @@ export const insertProductSchema = createInsertSchema(products).pick({
 
 export const insertStoreSchema = createInsertSchema(stores).pick({
   name: true,
+  storeType: true,
   address: true,
   phone: true,
   gstNumber: true,
@@ -193,3 +199,28 @@ export interface ReportStats {
   totalTransactions: number;
   averageBill: number;
 }
+
+// Store Types
+export const STORE_TYPES = {
+  medical: 'medical',
+  provision: 'provision',
+  retail: 'retail',
+  general: 'general'
+} as const;
+
+export type StoreType = typeof STORE_TYPES[keyof typeof STORE_TYPES];
+
+// Unit Catalog based on Store Type
+export const UNIT_CATALOG: Record<StoreType, string[]> = {
+  medical: ['mg', 'ml', 'tablets', 'capsules', 'strips', 'bottles', 'syrup', 'injection', 'pieces'],
+  provision: ['kg', 'gram', 'ltr', 'ml', 'pieces', 'packets', 'dozen', 'boxes'],
+  retail: ['pieces', 'sets', 'boxes', 'units', 'pairs', 'packets'],
+  general: ['pieces', 'kg', 'gram', 'ltr', 'ml', 'tablets', 'capsules', 'strips', 'bottles', 'packets', 'dozen', 'boxes', 'sets', 'units', 'pairs']
+};
+
+export const STORE_TYPE_LABELS: Record<StoreType, string> = {
+  medical: 'Medical Store',
+  provision: 'Provision Store',
+  retail: 'Retail Shop',
+  general: 'General Store'
+};

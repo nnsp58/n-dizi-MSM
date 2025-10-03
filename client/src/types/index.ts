@@ -3,6 +3,7 @@ export interface User {
   email: string;
   password?: string;
   storeName: string;
+  storeType?: string;
   ownerName: string;
   phone?: string;
   address?: string;
@@ -21,6 +22,7 @@ export interface Product {
   name: string;
   category?: string;
   quantity: number;
+  unit?: string;
   price: number;
   gst: number;
   lowStockThreshold?: number;
