@@ -75,12 +75,29 @@ Preferred communication style: Simple, everyday language.
 - GST computation at item level
 - QR/Barcode scanning integration using jsQR and device camera
 - Invoice generation with PDF export using jsPDF
+- Optional operator selection for sales attribution
+- Mobile-responsive design with bottom drawer cart (Sheet component)
+
+**Multi-Operator Management**
+- CRUD operations for up to 5 operators per store owner
+- Operator profiles with name, email, phone, role, and active/inactive status
+- Zustand-based operators store with localStorage persistence
+- Sales attribution via operatorId tracking in transactions
+- Dashboard quick access tile for operators management
 
 **Reporting & Analytics**
-- Date range filtering for sales reports
-- Transaction history with pagination
-- Export capabilities for inventory and sales data
+- Tabbed interface: Sales Report and Operator Performance
+- Date range filtering for all reports
+- Transaction history with pagination and search
+- Export capabilities (Excel, CSV) for inventory and sales data
 - Dashboard with key metrics (sales, inventory, alerts)
+- Operator performance tracking:
+  - Ranked by revenue (highest to lowest)
+  - Metrics: transactions count, items sold, total revenue
+  - Visual indicators: trophy/medal/award icons for top 3
+  - "Inactive" badges for former/removed operators
+  - Historical data preserved even after operator deletion
+  - Fallback "Former Employee" entry for deleted operators
 
 **Scanner Integration**
 - Camera-based QR/barcode scanning using jsQR
