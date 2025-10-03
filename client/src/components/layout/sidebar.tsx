@@ -92,9 +92,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Navigation */}
       <nav className="p-4 space-y-2">
         {navigation.map((item) => (
-          <Link key={item.name} href={item.href}>
+          <Link key={item.name} href={item.href} onClick={() => {
+            onClose();
+          }}>
             <button
-              onClick={onClose}
               data-testid={`link-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left ${
                 isActive(item.href)
