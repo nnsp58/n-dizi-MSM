@@ -121,6 +121,33 @@ Preferred communication style: Simple, everyday language.
 - Mobile-responsive design with clear UX feedback
 - Integrated into sidebar navigation and dashboard quick access
 
+**Feedback & Admin Control System**
+- Complete user feedback submission and admin management system
+- User-facing feedback form at /feedback with:
+  - Category selection (Bug, Feature Request, Improvement, General, Other)
+  - 5-star rating system with interactive UI
+  - Subject and message fields with validation
+  - Previous feedback history with status tracking
+- Admin feedback management at /admin/feedback with:
+  - View all user feedback with filtering by status
+  - Respond to feedback with admin comments
+  - Update feedback status (pending, reviewed, resolved, closed)
+  - isAdmin role check for secure access
+- Session-based authentication for API security:
+  - POST /api/feedback uses req.session.userId (prevents user ID spoofing)
+  - GET /api/feedback enforces user isolation (users only see own feedback)
+  - Admin role check for cross-user data access
+  - Proper 401/403 error handling for unauthorized access
+- Database schema:
+  - `feedback` table with userId FK, category, rating, subject, message, status, adminResponse
+  - `notification_logs` table for push notification tracking (prepared for Firebase integration)
+  - `user_activity` table for analytics and usage tracking
+- Users table enhanced with:
+  - `isAdmin` boolean field for admin role identification
+  - `fcmToken` field for Firebase Cloud Messaging (future push notifications)
+- Settings page integration with "Give Feedback" button in Help & Resources section
+- Mobile-responsive design with proper form validation and toast notifications
+
 **Scanner Integration**
 - Camera-based QR/barcode scanning using jsQR
 - Manual code entry fallback
