@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Link } from 'wouter';
 import { useAuthStore } from '@/store/auth-store';
 import { useFeedback } from '@/hooks/use-feedback';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -574,15 +575,17 @@ export default function Settings() {
                 <p className="text-sm text-muted-foreground">App information</p>
               </Button>
               
-              <Button
-                onClick={forceFeedback}
-                variant="outline"
-                className="p-4 h-auto flex flex-col items-start text-left"
-              >
-                <i className="fas fa-star text-primary text-2xl mb-2"></i>
-                <p className="font-medium text-foreground">Give Feedback</p>
-                <p className="text-sm text-muted-foreground">Rate & review</p>
-              </Button>
+              <Link href="/feedback">
+                <Button
+                  variant="outline"
+                  className="p-4 h-auto flex flex-col items-start text-left w-full"
+                  data-testid="button-goto-feedback"
+                >
+                  <i className="fas fa-star text-primary text-2xl mb-2"></i>
+                  <p className="font-medium text-foreground">Give Feedback</p>
+                  <p className="text-sm text-muted-foreground">Share your thoughts</p>
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
