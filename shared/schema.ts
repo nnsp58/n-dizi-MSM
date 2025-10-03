@@ -12,6 +12,8 @@ export const users = pgTable("users", {
   ownerName: text("owner_name").notNull(),
   phone: text("phone"),
   address: text("address"),
+  isAdmin: boolean("is_admin").default(false).notNull(),
+  fcmToken: text("fcm_token"),
   plan: text("plan").notNull().default("free"),
   razorpayCustomerId: text("razorpay_customer_id"),
   razorpaySubscriptionId: text("razorpay_subscription_id"),
@@ -19,6 +21,7 @@ export const users = pgTable("users", {
   razorpayOrderId: text("razorpay_order_id"),
   subscriptionStatus: text("subscription_status").default("inactive"),
   subscriptionEndsAt: timestamp("subscription_ends_at"),
+  lastLoginAt: timestamp("last_login_at"),
   lastSyncAt: timestamp("last_sync_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -108,6 +111,45 @@ export const returns = pgTable("returns", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const feedback = pgTable("feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  category: text("category").notNull().default("general"),
+  rating: integer("rating").notNull().default(5),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("pending"),
+  adminResponse: text("admin_response"),
+  adminRespondedAt: timestamp("admin_responded_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const notificationLogs = pgTable("notification_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  targetAudience: text("target_audience").notNull().default("all"),
+  targetUserIds: jsonb("target_user_ids"),
+  sentCount: integer("sent_count").default(0),
+  deliveredCount: integer("delivered_count").default(0),
+  openedCount: integer("opened_count").default(0),
+  status: text("status").notNull().default("sent"),
+  sentBy: varchar("sent_by").references(() => users.id, { onDelete: "set null" }),
+  scheduledFor: timestamp("scheduled_for"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const userActivity = pgTable("user_activity", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  activityType: text("activity_type").notNull(),
+  description: text("description"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
   password: true,
@@ -168,12 +210,36 @@ export const insertReturnSchema = createInsertSchema(returns).pick({
   storeId: true,
 });
 
+export const insertFeedbackSchema = createInsertSchema(feedback).pick({
+  category: true,
+  rating: true,
+  subject: true,
+  message: true,
+});
+
+export const insertNotificationLogSchema = createInsertSchema(notificationLogs).pick({
+  title: true,
+  message: true,
+  targetAudience: true,
+  targetUserIds: true,
+  scheduledFor: true,
+});
+
+export const insertUserActivitySchema = createInsertSchema(userActivity).pick({
+  activityType: true,
+  description: true,
+  metadata: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertStore = z.infer<typeof insertStoreSchema>;
 export type InsertOperator = z.infer<typeof insertOperatorSchema>;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 export type InsertReturn = z.infer<typeof insertReturnSchema>;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+export type InsertNotificationLog = z.infer<typeof insertNotificationLogSchema>;
+export type InsertUserActivity = z.infer<typeof insertUserActivitySchema>;
 
 export type User = typeof users.$inferSelect;
 export type Product = typeof products.$inferSelect;
@@ -182,6 +248,9 @@ export type Operator = typeof operators.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Settings = typeof settings.$inferSelect;
 export type Return = typeof returns.$inferSelect;
+export type Feedback = typeof feedback.$inferSelect;
+export type NotificationLog = typeof notificationLogs.$inferSelect;
+export type UserActivity = typeof userActivity.$inferSelect;
 
 export interface CartItem extends Product {
   cartQuantity: number;
@@ -224,3 +293,53 @@ export const STORE_TYPE_LABELS: Record<StoreType, string> = {
   retail: 'Retail Shop',
   general: 'General Store'
 };
+
+// Feedback Categories
+export const FEEDBACK_CATEGORIES = {
+  bug: 'Bug Report',
+  feature: 'Feature Request',
+  improvement: 'Improvement',
+  general: 'General Feedback',
+  other: 'Other'
+} as const;
+
+export type FeedbackCategory = keyof typeof FEEDBACK_CATEGORIES;
+
+// Notification Audience Types
+export const NOTIFICATION_AUDIENCES = {
+  all: 'All Users',
+  premium: 'Premium Subscribers',
+  free: 'Free Plan Users',
+  inactive: 'Inactive Users',
+  custom: 'Custom Selection'
+} as const;
+
+export type NotificationAudience = keyof typeof NOTIFICATION_AUDIENCES;
+
+// User Activity Types
+export const ACTIVITY_TYPES = {
+  login: 'login',
+  logout: 'logout',
+  product_created: 'product_created',
+  product_updated: 'product_updated',
+  product_deleted: 'product_deleted',
+  transaction_created: 'transaction_created',
+  return_processed: 'return_processed',
+  subscription_purchased: 'subscription_purchased',
+  feedback_submitted: 'feedback_submitted'
+} as const;
+
+export type ActivityType = typeof ACTIVITY_TYPES[keyof typeof ACTIVITY_TYPES];
+
+// Admin Dashboard Stats
+export interface AdminDashboardStats {
+  totalUsers: number;
+  activeUsers: number;
+  premiumUsers: number;
+  freeUsers: number;
+  totalTransactions: number;
+  totalRevenue: number;
+  pendingFeedback: number;
+  notificationsSent: number;
+  storeTypeDistribution: Record<StoreType, number>;
+}
