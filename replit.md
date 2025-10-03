@@ -49,10 +49,10 @@ Preferred communication style: Simple, everyday language.
 - Neon serverless PostgreSQL for cloud database
 
 **Database Schema**
-- Users: Authentication, store profile, subscription status, and Razorpay payment metadata
-- Stores: Multi-store support with user relationships
+- Users: Authentication, store profile, storeType, subscription status, and Razorpay payment metadata
+- Stores: Multi-store support with user relationships and storeType
 - Operators: Store staff/employees (up to 5 per owner) with role assignment and sales attribution
-- Products: Inventory items with stock levels, pricing, GST, expiry tracking, and store association
+- Products: Inventory items with stock levels, unit (kg/ltr/tablets/etc), pricing, GST, expiry tracking, and store association
 - Transactions: Sales records with invoice numbers, itemized purchases, operator tracking, returnedItems tracking, and store association
 - Returns: Return records with transactionId reference, returnedItems (jsonb), refundAmount, reason, and status
 - Settings: User preferences and app configuration stored as JSON with store-level isolation
@@ -62,11 +62,14 @@ Preferred communication style: Simple, everyday language.
 **Authentication System**
 - Session-based authentication using express-session
 - Bcrypt password hashing for secure credential storage
+- Store type selection during signup (Medical/Provision/Retail/General)
 - PostgreSQL-backed user authentication with cloud sync
 - Local-first authentication using IndexedDB for offline access
 
 **Inventory Management**
 - CRUD operations for products with code/barcode associations
+- Store type-based unit management (Medical: mg/ml/tablets, Provision: kg/ltr, Retail: pieces/sets, General: all units)
+- Dynamic unit selector in product form based on store type
 - Category-based filtering and search functionality
 - Low stock threshold alerts and expiry date tracking
 - Excel export functionality using XLSX library

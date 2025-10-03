@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PWAUtils } from '@/lib/pwa-utils';
+import { STORE_TYPE_LABELS } from '@shared/schema';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ export default function AuthPage() {
     email: '',
     password: '',
     storeName: '',
+    storeType: 'general',
     ownerName: '',
     phone: '',
     address: ''
@@ -92,6 +94,39 @@ export default function AuthPage() {
                       data-testid="input-storename"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label>Store Type</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(STORE_TYPE_LABELS).map(([type, label]) => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => handleInputChange('storeType', type)}
+                          data-testid={`button-signup-store-type-${type}`}
+                          className={`p-2 rounded-lg border-2 transition-all text-xs font-medium ${
+                            formData.storeType === type
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="text-center">
+                            <div className="text-lg mb-0.5">
+                              {type === 'medical' && '💊'}
+                              {type === 'provision' && '🛒'}
+                              {type === 'retail' && '🏪'}
+                              {type === 'general' && '🏬'}
+                            </div>
+                            <div className="text-[10px] leading-tight">{label}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Select your store type to get relevant product units
+                    </p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="ownerName">Your Name *</Label>
                     <Input

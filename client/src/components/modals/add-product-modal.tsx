@@ -20,14 +20,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useInventoryStore } from '@/store/inventory-store';
+import { useAuthStore } from '@/store/auth-store';
 import { PWAUtils } from '@/lib/pwa-utils';
 import ScannerModal from './scanner-modal';
+import { UNIT_CATALOG, STORE_TYPES, StoreType } from '@shared/schema';
 
 const productSchema = z.object({
   code: z.string().min(1, 'Product code is required'),
   name: z.string().min(1, 'Product name is required'),
   category: z.string().optional(),
   quantity: z.number().min(0, 'Quantity must be 0 or greater'),
+  unit: z.string().optional(),
   price: z.number().min(0, 'Price must be 0 or greater'),
   gst: z.number().min(0).max(100, 'GST must be between 0 and 100'),
   lowStockThreshold: z.number().min(0).optional(),
@@ -45,9 +48,14 @@ interface AddProductModalProps {
 
 export default function AddProductModal({ open, onOpenChange, editProduct }: AddProductModalProps) {
   const { addProduct, updateProduct, getProductByCode } = useInventoryStore();
+  const { user } = useAuthStore();
   const [showScanner, setShowScanner] = useState(false);
   const [scannerType, setScannerType] = useState<'qr' | 'barcode'>('qr');
   const [loading, setLoading] = useState(false);
+  
+  // Get available units based on store type
+  const storeType = (user?.storeType || 'general') as StoreType;
+  const availableUnits = UNIT_CATALOG[storeType] || UNIT_CATALOG.general;
 
   const form = useForm<ProductForm>({
     resolver: zodResolver(productSchema),
@@ -56,6 +64,7 @@ export default function AddProductModal({ open, onOpenChange, editProduct }: Add
       name: '',
       category: '',
       quantity: 0,
+      unit: 'pieces',
       price: 0,
       gst: 18,
       lowStockThreshold: 10,
@@ -71,6 +80,7 @@ export default function AddProductModal({ open, onOpenChange, editProduct }: Add
         name: editProduct.name,
         category: editProduct.category || '',
         quantity: editProduct.quantity,
+        unit: editProduct.unit || 'pieces',
         price: editProduct.price,
         gst: editProduct.gst,
         lowStockThreshold: editProduct.lowStockThreshold || 10,
@@ -83,6 +93,7 @@ export default function AddProductModal({ open, onOpenChange, editProduct }: Add
         name: '',
         category: '',
         quantity: 0,
+        unit: 'pieces',
         price: 0,
         gst: 18,
         lowStockThreshold: 10,
@@ -137,6 +148,7 @@ export default function AddProductModal({ open, onOpenChange, editProduct }: Add
         name: existingProduct.name,
         category: existingProduct.category || '',
         quantity: existingProduct.quantity,
+        unit: existingProduct.unit || 'pieces',
         price: existingProduct.price,
         gst: existingProduct.gst,
         lowStockThreshold: existingProduct.lowStockThreshold || 10,
@@ -259,6 +271,28 @@ export default function AddProductModal({ open, onOpenChange, editProduct }: Add
                   </p>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="unit">Unit</Label>
+              <Select 
+                value={form.watch('unit')} 
+                onValueChange={(value) => form.setValue('unit', value)}
+              >
+                <SelectTrigger data-testid="select-unit">
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {availableUnits.map((unit) => (
+                    <SelectItem key={unit} value={unit} data-testid={`unit-option-${unit}`}>
+                      {unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Units available for your store type
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -13,9 +13,11 @@ import { Switch } from '@/components/ui/switch';
 import { PWAUtils } from '@/lib/pwa-utils';
 import { SyncManager } from '@/lib/sync';
 import InfoModal from '@/components/modals/info-modal';
+import { STORE_TYPES, STORE_TYPE_LABELS, StoreType } from '@shared/schema';
 
 const settingsSchema = z.object({
   storeName: z.string().min(1, 'Store name is required'),
+  storeType: z.string().optional(),
   ownerName: z.string().min(1, 'Owner name is required'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
@@ -41,6 +43,7 @@ export default function Settings() {
     resolver: zodResolver(settingsSchema),
     defaultValues: {
       storeName: user?.storeName || '',
+      storeType: user?.storeType || 'general',
       ownerName: user?.ownerName || '',
       email: user?.email || '',
       phone: user?.phone || '',
@@ -350,6 +353,38 @@ export default function Settings() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Store Type</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {Object.entries(STORE_TYPE_LABELS).map(([type, label]) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => form.setValue('storeType', type)}
+                      data-testid={`button-store-type-${type}`}
+                      className={`p-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                        form.watch('storeType') === type
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="text-center">
+                        <div className="text-xl mb-1">
+                          {type === 'medical' && '💊'}
+                          {type === 'provision' && '🛒'}
+                          {type === 'retail' && '🏪'}
+                          {type === 'general' && '🏬'}
+                        </div>
+                        {label}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Choose your store type to get relevant product units (kg, ltr, tablets, etc.)
+                </p>
               </div>
 
               <div className="space-y-2">
