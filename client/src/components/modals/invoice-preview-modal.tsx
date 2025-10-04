@@ -35,6 +35,35 @@ export default function InvoicePreviewModal({
     }
   };
 
+  const handleThermalPrint = () => {
+    try {
+      const doc = pdfGenerator.generateThermalReceipt(invoiceData);
+      
+      // Auto-print for thermal printer
+      const pdfBlob = pdfGenerator.getPDFBlob(doc);
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      
+      // Open in new window and trigger print
+      const printWindow = window.open(pdfUrl);
+      if (printWindow) {
+        printWindow.onload = () => {
+          printWindow.print();
+        };
+        // Clean up after a delay (whether print succeeds or not)
+        setTimeout(() => {
+          URL.revokeObjectURL(pdfUrl);
+        }, 2000);
+        PWAUtils.showToast('Thermal receipt ready to print', 'success');
+      } else {
+        // Popup blocked or failed to open
+        URL.revokeObjectURL(pdfUrl);
+        PWAUtils.showToast('Please allow popups to print thermal receipt', 'error');
+      }
+    } catch (error) {
+      PWAUtils.showToast('Failed to generate thermal receipt', 'error');
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -48,14 +77,25 @@ export default function InvoicePreviewModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle>Invoice Preview</DialogTitle>
-          <div className="flex gap-2">
-            <Button onClick={handlePrint} variant="outline" size="sm">
-              <i className="fas fa-print mr-2"></i>
-              Print
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              onClick={handleThermalPrint} 
+              variant="default" 
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+              data-testid="button-thermal-print"
+            >
+              <i className="fas fa-receipt mr-2"></i>
+              <span className="hidden sm:inline">Thermal Print</span>
+              <span className="sm:hidden">Thermal</span>
             </Button>
-            <Button onClick={handleDownloadPDF} size="sm">
+            <Button onClick={handlePrint} variant="outline" size="sm" data-testid="button-print">
+              <i className="fas fa-print mr-2"></i>
+              <span className="hidden sm:inline">Print</span>
+            </Button>
+            <Button onClick={handleDownloadPDF} variant="outline" size="sm" data-testid="button-download">
               <i className="fas fa-download mr-2"></i>
-              Download PDF
+              <span className="hidden sm:inline">Download</span>
             </Button>
           </div>
         </DialogHeader>

@@ -2,6 +2,141 @@ import jsPDF from 'jspdf';
 import { InvoiceData } from '@/types';
 
 export class PDFGenerator {
+  // Generate thermal receipt for 58mm (2 inch) portable printers
+  generateThermalReceipt(invoiceData: InvoiceData): jsPDF {
+    // 58mm = ~2.28 inches for portable thermal printers
+    const pageWidth = 58; // mm (2 inch paper roll)
+    
+    // Calculate approximate height based on items (will be trimmed by printer)
+    const baseHeight = 120; // Base content height
+    const itemHeight = invoiceData.items.length * 25; // ~25mm per item
+    const totalHeight = Math.max(baseHeight + itemHeight, 150);
+    
+    const doc = new jsPDF({
+      unit: 'mm',
+      format: [pageWidth, totalHeight],
+      orientation: 'portrait'
+    });
+    
+    const centerX = pageWidth / 2;
+    const leftMargin = 2;
+    let y = 8;
+    
+    // Store Name (Bold, Larger)
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(invoiceData.storeName, centerX, y, { align: 'center' });
+    y += 6;
+    
+    // Store Address & Contact (Smaller)
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    if (invoiceData.storeAddress) {
+      const addressLines = doc.splitTextToSize(invoiceData.storeAddress, pageWidth - 4);
+      addressLines.forEach((line: string) => {
+        doc.text(line, centerX, y, { align: 'center' });
+        y += 3.5;
+      });
+    }
+    if (invoiceData.storeContact) {
+      doc.text(invoiceData.storeContact, centerX, y, { align: 'center' });
+      y += 5;
+    }
+    
+    // Separator line
+    doc.line(leftMargin, y, pageWidth - leftMargin, y);
+    y += 5;
+    
+    // Invoice details
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('INVOICE', centerX, y, { align: 'center' });
+    y += 5;
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`No: ${invoiceData.invoiceNumber}`, leftMargin, y);
+    y += 4;
+    doc.text(`Date: ${invoiceData.date}`, leftMargin, y);
+    y += 4;
+    doc.text(`Time: ${invoiceData.time}`, leftMargin, y);
+    y += 5;
+    
+    // Separator line
+    doc.line(leftMargin, y, pageWidth - leftMargin, y);
+    y += 5;
+    
+    // Items header
+    doc.setFont('helvetica', 'bold');
+    doc.text('ITEMS', leftMargin, y);
+    y += 5;
+    
+    // Items list
+    doc.setFont('helvetica', 'normal');
+    invoiceData.items.forEach((item, index) => {
+      const itemTotal = item.price * item.cartQuantity;
+      const gstAmount = (itemTotal * item.gst) / 100;
+      const lineTotal = itemTotal + gstAmount;
+      
+      // Item name
+      const itemLines = doc.splitTextToSize(item.name, pageWidth - 4);
+      itemLines.forEach((line: string) => {
+        doc.text(line, leftMargin, y);
+        y += 3.5;
+      });
+      
+      // Item details (qty x price = subtotal)
+      doc.text(`  ${item.cartQuantity} x ₹${item.price.toFixed(2)} = ₹${itemTotal.toFixed(2)}`, leftMargin, y);
+      y += 3.5;
+      
+      // GST if applicable
+      if (item.gst > 0) {
+        doc.text(`  GST ${item.gst}%: ₹${gstAmount.toFixed(2)}`, leftMargin, y);
+        y += 3.5;
+      }
+      
+      // Line total (bold)
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Total: ₹${lineTotal.toFixed(2)}`, pageWidth - leftMargin, y, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      y += 5;
+    });
+    
+    // Separator line before totals
+    doc.line(leftMargin, y, pageWidth - leftMargin, y);
+    y += 5;
+    
+    // Summary section
+    doc.setFont('helvetica', 'normal');
+    doc.text('Subtotal:', leftMargin, y);
+    doc.text(`₹${invoiceData.subtotal.toFixed(2)}`, pageWidth - leftMargin, y, { align: 'right' });
+    y += 4;
+    
+    doc.text('Total GST:', leftMargin, y);
+    doc.text(`₹${invoiceData.gst.toFixed(2)}`, pageWidth - leftMargin, y, { align: 'right' });
+    y += 5;
+    
+    // Grand Total (Bold, Larger)
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL:', leftMargin, y);
+    doc.text(`₹${invoiceData.total.toFixed(2)}`, pageWidth - leftMargin, y, { align: 'right' });
+    y += 8;
+    
+    // Separator line
+    doc.line(leftMargin, y, pageWidth - leftMargin, y);
+    y += 5;
+    
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Thank you for your business!', centerX, y, { align: 'center' });
+    y += 4;
+    doc.text('Presented by n-dizi', centerX, y, { align: 'center' });
+    
+    return doc;
+  }
+
   generateInvoice(invoiceData: InvoiceData, isFreePlan: boolean = true): jsPDF {
     const doc = new jsPDF();
     
