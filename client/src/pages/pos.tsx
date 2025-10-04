@@ -103,6 +103,14 @@ export default function POS() {
     const cartItem = cart.find(item => item.id === productId);
     const product = products.find(p => p.id === productId);
     
+    // Remove item if quantity is 0 or less
+    if (newQuantity <= 0) {
+      removeFromCart(productId);
+      PWAUtils.showToast('Item removed from cart', 'info');
+      return;
+    }
+    
+    // Check stock availability
     if (product && newQuantity > product.quantity) {
       PWAUtils.showToast(`Only ${product.quantity} units available`, 'error');
       return;
@@ -190,9 +198,31 @@ export default function POS() {
                     >
                       <i className="fas fa-minus text-xs"></i>
                     </Button>
-                    <span className="w-12 text-center font-medium" data-testid={`quantity-${item.id}`}>
-                      {item.cartQuantity}
-                    </span>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={item.cartQuantity}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Allow empty field (user is typing)
+                        if (value === '') return;
+                        
+                        const newQty = parseInt(value);
+                        // Handle invalid numbers
+                        if (isNaN(newQty)) return;
+                        
+                        // Let handleQuantityChange handle 0 and negative (will remove item)
+                        handleQuantityChange(item.id, newQty);
+                      }}
+                      onBlur={(e) => {
+                        // If field is empty on blur, restore to 1
+                        if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                          handleQuantityChange(item.id, 1);
+                        }
+                      }}
+                      className="w-16 h-8 text-center p-1"
+                      data-testid={`input-quantity-${item.id}`}
+                    />
                     <Button
                       onClick={() => handleQuantityChange(item.id, item.cartQuantity + 1)}
                       variant="outline"
@@ -326,13 +356,13 @@ export default function POS() {
                 </div>
                 
                 <div className="relative">
-                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
+                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground z-10"></i>
                   <Input
-                    placeholder="Search product by name, code, or scan..."
+                    placeholder="Type product name or code..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddProduct()}
-                    className="pl-10"
+                    className="pl-10 pr-20"
                     data-testid="input-search-product"
                   />
                   {searchQuery && (
@@ -345,32 +375,53 @@ export default function POS() {
                       Add
                     </Button>
                   )}
+                  
+                  {/* Autocomplete Dropdown */}
+                  {searchResults.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-card border-2 border-primary rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                      <div className="p-2 bg-primary/10 border-b border-primary/20">
+                        <p className="text-xs font-medium text-primary">
+                          <i className="fas fa-arrow-down mr-2"></i>
+                          Select from {searchResults.length} result{searchResults.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="p-1 space-y-1">
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => {
+                              if (product.quantity > 0) {
+                                addToCart(product);
+                                PWAUtils.showToast(`Added ${product.name} to cart`, 'success');
+                              } else {
+                                PWAUtils.showToast('Product is out of stock', 'error');
+                              }
+                              setSearchQuery('');
+                            }}
+                            className="w-full p-3 text-left hover:bg-primary/10 active:bg-primary/20 rounded-lg flex items-center justify-between transition-colors"
+                            data-testid={`search-result-${product.id}`}
+                            disabled={product.quantity === 0}
+                          >
+                            <div className="flex-1">
+                              <p className="font-semibold text-foreground text-sm mb-0.5">{product.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                <i className="fas fa-barcode mr-1"></i>
+                                {product.code}
+                              </p>
+                            </div>
+                            <div className="text-right ml-4">
+                              <p className="font-bold text-primary">{PWAUtils.formatCurrency(product.price)}</p>
+                              <p className={`text-xs ${product.quantity > 0 ? 'text-green-600' : 'text-destructive'}`}>
+                                <i className={`fas fa-${product.quantity > 0 ? 'check-circle' : 'times-circle'} mr-1`}></i>
+                                Stock: {product.quantity}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                {searchResults.length > 0 && (
-                  <div className="border rounded-lg p-2 space-y-1">
-                    {searchResults.map((product) => (
-                      <button
-                        key={product.id}
-                        onClick={() => {
-                          addToCart(product);
-                          setSearchQuery('');
-                        }}
-                        className="w-full p-2 text-left hover:bg-muted rounded flex items-center justify-between"
-                        data-testid={`search-result-${product.id}`}
-                      >
-                        <div>
-                          <p className="font-medium text-sm">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">{product.code}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm">{PWAUtils.formatCurrency(product.price)}</p>
-                          <p className="text-xs text-muted-foreground">Stock: {product.quantity}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
 

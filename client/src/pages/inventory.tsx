@@ -182,7 +182,73 @@ export default function Inventory() {
             </div>
           ) : currentProducts.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-4">
+                {currentProducts.map((product) => {
+                  const stockStatus = getStockStatus(product);
+                  return (
+                    <Card key={product.id} className="p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-foreground">{product.name}</h3>
+                          {product.category && (
+                            <p className="text-xs text-muted-foreground mt-1">{product.category}</p>
+                          )}
+                          <code className="text-xs bg-muted px-2 py-1 rounded inline-block mt-2">
+                            {product.code}
+                          </code>
+                        </div>
+                        <Badge variant={stockStatus.variant}>
+                          {product.quantity}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                        <div>
+                          <span className="text-muted-foreground">Price:</span>
+                          <span className="font-semibold ml-2">{PWAUtils.formatCurrency(product.price)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">GST:</span>
+                          <span className="ml-2">{product.gst}%</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Expiry:</span>
+                          <span className="ml-2">
+                            {product.expiry ? PWAUtils.formatDate(product.expiry) : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2 pt-3 border-t border-border">
+                        <Button
+                          onClick={() => handleEdit(product)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          data-testid={`button-edit-${product.id}`}
+                        >
+                          <i className="fas fa-edit mr-2"></i>
+                          Edit
+                        </Button>
+                        <Button
+                          onClick={() => handleDelete(product)}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 text-destructive hover:text-destructive"
+                          data-testid={`button-delete-${product.id}`}
+                        >
+                          <i className="fas fa-trash mr-2"></i>
+                          Delete
+                        </Button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -244,6 +310,7 @@ export default function Inventory() {
                                 onClick={() => handleEdit(product)}
                                 variant="ghost"
                                 size="sm"
+                                data-testid={`button-edit-${product.id}`}
                               >
                                 <i className="fas fa-edit"></i>
                               </Button>
@@ -252,6 +319,7 @@ export default function Inventory() {
                                 variant="ghost"
                                 size="sm"
                                 className="text-destructive hover:text-destructive"
+                                data-testid={`button-delete-${product.id}`}
                               >
                                 <i className="fas fa-trash"></i>
                               </Button>
