@@ -1,0 +1,30 @@
+Inventory Manager – Price Calculation Issue
+In the Inventory Manager, I noticed that the Edit/Delete functions are working now, which is great. However, there is an issue with how product pricing is handled. When I add a product like "Paracetamol" with a quantity of 100 and the unit as "Strip", I want to enter the price per strip (for example, ₹50 per strip). But the system currently does not calculate the total value. It should automatically multiply the unit price by quantity — in this case, ₹50 × 100 = ₹5000 — and also include GST if applicable.
+
+Required Calculation Logic
+The inventory system should be able to handle units like Strip, Kg, Gram, Litre, Unit, Dozen, etc. The logic should be: I enter the price of one unit, and the system should automatically calculate the total value = quantity × unit price, and display the final amount (with or without GST as needed). This is essential for proper stock valuation and billing.
+
+POS (Point of Sale) – Same Issue
+This same logic is also missing from the Point of Sale (POS) screen. When I select a product from the dropdown and add it to the cart, I am not able to enter how many units I want to sell. There is no option to change quantity or price. Once a product is in the cart, there is no way to edit or delete it either, which makes corrections impossible.
+
+Expected POS Functionality
+In the POS, after selecting a product, I should be able to:
+
+1. Enter the quantity to sell,
+
+
+2. Automatically apply the correct unit price from inventory,
+
+
+3. Calculate and display the total amount (unit price × quantity),
+
+
+4. Optionally show GST,
+
+
+5. Edit or delete any item from the cart if needed.
+
+
+
+Summary
+To summarize, both the Inventory Manager and POS need to support proper unit-wise pricing and total calculation. Basic features like quantity input, unit price handling, total price calculation, and edit/delete options in the cart are essential for smooth operation. Once these are working correctly, I will continue testing and share further feedback.

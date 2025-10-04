@@ -207,7 +207,11 @@ export default function POS() {
                         // Allow empty field (user is typing)
                         if (value === '') return;
                         
-                        const newQty = parseInt(value);
+                        // Only allow digits and basic number formatting
+                        const sanitized = value.replace(/[^\d]/g, '');
+                        if (sanitized === '') return;
+                        
+                        const newQty = parseInt(sanitized);
                         // Handle invalid numbers
                         if (isNaN(newQty)) return;
                         
@@ -215,8 +219,11 @@ export default function POS() {
                         handleQuantityChange(item.id, newQty);
                       }}
                       onBlur={(e) => {
-                        // If field is empty on blur, restore to 1
-                        if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                        const value = e.target.value;
+                        const parsed = parseInt(value);
+                        
+                        // Restore to 1 if field is empty, NaN, or less than 1
+                        if (value === '' || isNaN(parsed) || parsed < 1) {
                           handleQuantityChange(item.id, 1);
                         }
                       }}

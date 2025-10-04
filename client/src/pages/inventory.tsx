@@ -205,12 +205,21 @@ export default function Inventory() {
                       
                       <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                         <div>
-                          <span className="text-muted-foreground">Price:</span>
+                          <span className="text-muted-foreground">Unit Price:</span>
                           <span className="font-semibold ml-2">{PWAUtils.formatCurrency(product.price)}</span>
                         </div>
                         <div>
                           <span className="text-muted-foreground">GST:</span>
                           <span className="ml-2">{product.gst}%</span>
+                        </div>
+                        <div className="col-span-2 bg-primary/5 p-2 rounded">
+                          <span className="text-muted-foreground">Total Value:</span>
+                          <span className="font-bold ml-2 text-primary">
+                            {PWAUtils.formatCurrency(product.quantity * product.price)}
+                          </span>
+                          <span className="text-xs text-muted-foreground ml-2">
+                            ({product.quantity} × {PWAUtils.formatCurrency(product.price)})
+                          </span>
                         </div>
                         <div className="col-span-2">
                           <span className="text-muted-foreground">Expiry:</span>
@@ -255,7 +264,8 @@ export default function Inventory() {
                       <TableHead>Product</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Stock</TableHead>
-                      <TableHead>Price</TableHead>
+                      <TableHead>Unit Price</TableHead>
+                      <TableHead>Total Value</TableHead>
                       <TableHead>GST</TableHead>
                       <TableHead>Expiry</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -293,6 +303,16 @@ export default function Inventory() {
                             <span className="font-semibold">
                               {PWAUtils.formatCurrency(product.price)}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-primary">
+                                {PWAUtils.formatCurrency(product.quantity * product.price)}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {product.quantity} × {PWAUtils.formatCurrency(product.price)}
+                              </span>
+                            </div>
                           </TableCell>
                           <TableCell>{product.gst}%</TableCell>
                           <TableCell>
