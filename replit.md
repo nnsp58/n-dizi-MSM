@@ -159,6 +159,14 @@ Preferred communication style: Simple, everyday language.
 - Watermark for free plan users
 - Excel exports for inventory and transaction reports
 - Print-friendly invoice previews
+- Thermal receipt printing for 58mm (2-inch) portable printers:
+  - Optimized layout for ESC/POS thermal printers
+  - Single-column receipt format with 58mm width
+  - Dynamic height calculation based on items
+  - Minimal margins for maximum paper utilization
+  - Auto-print functionality via browser print dialog
+  - Text wrapping for long product names and addresses
+  - Separate "Thermal Print" button in invoice preview
 
 **Payment Integration (Razorpay) - BETA**
 - Secure payment processing for premium subscriptions
