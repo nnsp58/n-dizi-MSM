@@ -10,10 +10,5 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "functions": {
-    "api/server.js": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  ]
 }
