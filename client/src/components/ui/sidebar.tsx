@@ -275,20 +275,20 @@ const SidebarTrigger = React.forwardRef<
 
   return (
     <Button
-  ref={ref}
-  data-sidebar="trigger"
-  variant="ghost"
-  size="icon"
-  className={cn("h-9 w-9 bg-gray-100 hover:bg-gray-200 rounded shadow", className)}
-  onClick={(event) => {
-    onClick?.(event)
-    toggleSidebar()
-  }}
-  {...props}
->
-  <PanelLeft className="text-gray-800 dark:text-white" />
-  <span className="sr-only">Toggle Sidebar</span>
-</Button>
+      ref={ref}
+      data-sidebar="trigger"
+      variant="ghost"
+      size="sm"
+      className={cn("h-9 w-9 bg-red-500 hover:bg-red-600 rounded shadow flex items-center justify-center gap-2", className)}
+      onClick={(event) => {
+        onClick?.(event)
+        toggleSidebar()
+      }}
+      {...props}
+    >
+      <i className="fas fa-arrow-left text-white"></i>
+      <span className="text-white">side bar</span>
+    </Button>
   )
 })
 SidebarTrigger.displayName = "SidebarTrigger"
