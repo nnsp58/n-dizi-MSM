@@ -21,7 +21,7 @@ export function useScanner() {
       setScanResult(null);
 
       await scanner.startCamera(videoRef.current);
-      
+
       scanner.startScanning((result) => {
         setScanResult(result);
         setIsScanning(false);
@@ -64,6 +64,6 @@ export function useScanner() {
     startScanning,
     stopScanning,
     processBarcodeInput,
-    reset
+    reset,
   };
 }
