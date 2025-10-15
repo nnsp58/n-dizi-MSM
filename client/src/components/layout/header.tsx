@@ -5,9 +5,6 @@ import { useAuthStore } from '@/store/auth-store';
 import { useAlerts } from '@/hooks/use-alerts';
 import { PWAUtils } from '@/lib/pwa-utils';
 
-// Monogram image ko import karen (ensure path correct ho apke project me)
-import msmLogo from '@/assets/n-dizi-mono.png'; 
-
 interface HeaderProps {
   onMenuClick: () => void;
 }
@@ -68,7 +65,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* MSM Monogram Logo with animation - Mobile */}
         <div className="lg:hidden flex items-center gap-2">
           <img
-            src={msmLogo}
+            src="/n-dizi-msm/n-dizi-mono.png"
             alt="MSM Logo"
             className="w-10 h-10 rounded-lg shadow-md object-contain animate-pulse"
           />
@@ -149,4 +146,4 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </div>
     </header>
   );
-}
+            }
