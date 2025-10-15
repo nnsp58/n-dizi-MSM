@@ -6,7 +6,7 @@ import { useAlerts } from '@/hooks/use-alerts';
 import { PWAUtils } from '@/lib/pwa-utils';
 
 // Monogram image ko import karen (ensure path correct ho apke project me)
-import msmLogo from '@/assets/1000001753.jpeg'; 
+import msmLogo from '@/assets/n-dizi-mono.png'; 
 
 interface HeaderProps {
   onMenuClick: () => void;
