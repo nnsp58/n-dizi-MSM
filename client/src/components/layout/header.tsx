@@ -1,11 +1,12 @@
-// File Location: client/src/components/header.tsx
-// Replace this entire file with the code below
-
+import React from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth-store';
 import { useAlerts } from '@/hooks/use-alerts';
 import { PWAUtils } from '@/lib/pwa-utils';
+
+// Monogram image ko import karen (ensure path correct ho apke project me)
+import msmLogo from '@/assets/1000001753.jpeg'; 
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -64,12 +65,13 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <i className="fas fa-bars text-xl text-primary"></i>
         </Button>
         
-        {/* MSM Monogram Logo - Mobile */}
+        {/* MSM Monogram Logo with animation - Mobile */}
         <div className="lg:hidden flex items-center gap-2">
-          <div className="relative w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-lg tracking-tighter">MSM</span>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-          </div>
+          <img
+            src={msmLogo}
+            alt="MSM Logo"
+            className="w-10 h-10 rounded-lg shadow-md object-contain animate-pulse"
+          />
           <div className="flex flex-col">
             <span className="font-bold text-foreground text-base leading-tight">MSM</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
