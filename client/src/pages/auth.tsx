@@ -164,7 +164,7 @@ export default function AuthPage() {
                       <Input
                         id="storeName"
                         type="text"
-                        placeholder="Kanha Medical Store"
+                        placeholder="Narayan Dizi Hub"
                         value={formData.storeName}
                         onChange={(e) => handleInputChange('storeName', e.target.value)}
                         required={!isLogin}
@@ -193,6 +193,7 @@ export default function AuthPage() {
                                 {type === 'provision' && '🛒'}
                                 {type === 'retail' && '🏪'}
                                 {type === 'general' && '🏬'}
+                                {type === 'digital' && 'Dizi'}
                               </div>
                               <div className="text-[10px] leading-tight">{label}</div>
                             </div>
