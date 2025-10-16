@@ -66,24 +66,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <i className="fas fa-bars text-xl text-primary"></i>
         </Button>
 
-        {/* MSM Monogram Logo */}
+        {/* MSM Logo - Simple and Safe */}
         <div className="lg:hidden flex items-center gap-2">
-          <img 
-            src="/n-dizi-msm/n-dizi-mono.png" 
-            alt="MSM Logo" 
-            className="w-12 h-12 object-contain"
-            onError={(e) => {
-              // Fallback to text if image fails to load
-              const parent = e.currentTarget.parentElement;
-              if (parent) {
-                e.currentTarget.style.display = 'none';
-                const fallback = document.createElement('div');
-                fallback.className = 'w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center';
-                fallback.innerHTML = '<span class="font-bold text-primary text-xl">MSM</span>';
-                parent.insertBefore(fallback, e.currentTarget);
-              }
-            }}
-          />
+          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+            <span className="font-bold text-primary text-xl">M</span>
+          </div>
           <div className="flex flex-col">
             <span className="font-bold text-foreground text-base leading-tight">MSM</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
