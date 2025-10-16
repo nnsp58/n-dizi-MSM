@@ -67,16 +67,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         {/* MSM Monogram Logo - Auto-detect path */}
         <div className="lg:hidden flex items-center gap-2">
-          export default function TestLogo() {
-  return (
     <img 
       src="/n-dizi-msm/n-dizi-mono.png" 
       alt="Logo" 
       style={{ width: '64px', height: '64px', border: '2px solid red', backgroundColor: 'white' }} 
     />
-  );
-}
-          <div className="flex flex-col">
+         <div className="flex flex-col">
             <span className="font-bold text-foreground text-base leading-tight">MSM</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
           </div>
