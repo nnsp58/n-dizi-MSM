@@ -48,6 +48,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
     return icons[location] || 'fa-home';
   };
 
+  // ✅ Automatically detects full domain path
+  const logoPath = `${window.location.origin}/n-dizi-msm/n-dizi-mono.png`;
+
   return (
     <header className="bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
       <div className="flex items-center gap-3">
@@ -62,11 +65,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <i className="fas fa-bars text-xl text-primary"></i>
         </Button>
 
-        {/* MSM Monogram Logo with smooth animation - Mobile */}
+        {/* MSM Monogram Logo - Auto-detect path */}
         <div className="lg:hidden flex items-center gap-2">
           <img
-            src="/n-dizi-msm/n-dizi-mono.png"
+            src={logoPath}
             alt="MSM Logo"
+            onError={(e) => {
+              e.currentTarget.src = '/icon-192.png'; // fallback image if path breaks
+            }}
             className="w-10 h-10 rounded-lg bg-[#0f172a]/80 p-1 shadow-md object-contain animate-pulse transition-transform hover:scale-110"
           />
           <div className="flex flex-col">
@@ -91,7 +97,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
           variant="ghost"
           size="icon"
           className="lg:hidden relative hover:bg-primary/10"
-          data-testid="button-notifications-mobile"
         >
           <i className="fas fa-bell text-lg"></i>
           {totalAlerts > 0 && (
@@ -111,7 +116,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
             variant="outline"
             size="sm"
             className="hidden lg:flex items-center gap-2 border-red-200 bg-red-50 hover:bg-red-100 text-red-600"
-            data-testid="button-alerts-desktop"
           >
             <i className="fas fa-bell animate-pulse"></i>
             <span className="font-semibold">
@@ -126,7 +130,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
           variant="secondary"
           size="sm"
           className="hidden sm:flex items-center gap-2 hover:scale-105 transition-transform"
-          data-testid="button-share"
         >
           <i className="fas fa-share-alt"></i>
           <span className="hidden md:inline">Share</span>
@@ -138,7 +141,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
           variant="destructive"
           size="sm"
           className="flex items-center gap-2 hover:scale-105 transition-transform"
-          data-testid="button-logout"
         >
           <i className="fas fa-sign-out-alt"></i>
           <span className="hidden sm:inline">Logout</span>
