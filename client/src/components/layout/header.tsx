@@ -48,8 +48,9 @@ export default function Header({ onMenuClick }: HeaderProps) {
     return icons[location] || 'fa-home';
   };
 
-  // ✅ Automatically detects full domain path
-  const logoPath = `${window.location.origin}/n-dizi-msm/n-dizi-mono.png`;
+  const handleAlertsClick = () => {
+    window.location.href = '/alerts';
+  };
 
   return (
     <header className="bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
@@ -65,14 +66,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <i className="fas fa-bars text-xl text-primary"></i>
         </Button>
 
-        {/* MSM Monogram Logo - Auto-detect path */}
+        {/* MSM Monogram Logo - Fixed path */}
         <div className="lg:hidden flex items-center gap-2">
-    <img 
-      src="/n-dizi-msm/n-dizi-mono.png" 
-      alt="Logo" 
-      style={{ width: '64px', height: '64px', border: '2px solid red', backgroundColor: 'white' }} 
-    />
-         <div className="flex flex-col">
+          <img 
+            src="/n-dizi-msm/n-dizi-mono.png" 
+            alt="MSM Logo" 
+            className="w-12 h-12 object-contain"
+            onError={(e) => {
+              // Fallback if image fails to load
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+          <div className="flex flex-col">
             <span className="font-bold text-foreground text-base leading-tight">MSM</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
           </div>
@@ -90,7 +95,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Notifications Button - Mobile */}
         <Button
-          onClick={() => (window.location.href = '/alerts')}
+          onClick={handleAlertsClick}
           variant="ghost"
           size="icon"
           className="lg:hidden relative hover:bg-primary/10"
@@ -98,7 +103,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <i className="fas fa-bell text-lg"></i>
           {totalAlerts > 0 && (
             <>
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold z-10">
                 {totalAlerts > 9 ? '9+' : totalAlerts}
               </span>
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full animate-ping opacity-75"></span>
@@ -109,7 +114,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* Alerts Badge - Desktop */}
         {totalAlerts > 0 && (
           <Button
-            onClick={() => (window.location.href = '/alerts')}
+            onClick={handleAlertsClick}
             variant="outline"
             size="sm"
             className="hidden lg:flex items-center gap-2 border-red-200 bg-red-50 hover:bg-red-100 text-red-600"
