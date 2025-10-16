@@ -68,13 +68,11 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* MSM Monogram Logo - Auto-detect path */}
         <div className="lg:hidden flex items-center gap-2">
           <img
-            src={logoPath}
-            alt="MSM Logo"
-            onError={(e) => {
-              e.currentTarget.src = '/icon-192.png'; // fallback image if path breaks
-            }}
-            className="w-10 h-10 rounded-lg bg-[#0f172a]/80 p-1 shadow-md object-contain animate-pulse transition-transform hover:scale-110"
-          />
+  src="/n-dizi-msm/n-dizi-mono.png"
+  alt="MSM Logo"
+  style={{ width: 64, height: 64, border: '2px solid red', backgroundColor: 'white' }}
+  className="rounded-lg object-contain animate-pulse"
+/>
           <div className="flex flex-col">
             <span className="font-bold text-foreground text-base leading-tight">MSM</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
