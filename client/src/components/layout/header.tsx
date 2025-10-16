@@ -66,21 +66,38 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <i className="fas fa-bars text-xl text-primary"></i>
         </Button>
 
-        {/* MSM Logo - Simple and Safe */}
+        {/* N-Dizi Animated Logo */}
         <div className="lg:hidden flex items-center gap-2">
-          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-            <span className="font-bold text-primary text-xl">M</span>
+          <div className="w-12 h-12 flex items-center justify-center">
+            <img 
+              src="/n-dizi-MSM/mono.png" 
+              alt="n-dizi.in" 
+              className="w-12 h-12 object-contain animate-pulse hover:animate-spin transition-all duration-300"
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(59, 130, 246, 0.5))',
+                animation: 'float 3s ease-in-out infinite'
+              }}
+            />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-foreground text-base leading-tight">MSM</span>
+            <span className="font-bold text-foreground text-base leading-tight">n-dizi.in</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
           </div>
         </div>
 
         {/* Desktop Page Title with Icon */}
         <div className="hidden lg:flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <i className={`fas ${getPageIcon()} text-primary text-lg`}></i>
+          {/* N-Dizi Logo on Desktop */}
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img 
+              src="/n-dizi-MSM/mono.png" 
+              alt="n-dizi.in" 
+              className="w-10 h-10 object-contain animate-pulse"
+              style={{
+                filter: 'drop-shadow(0 0 6px rgba(59, 130, 246, 0.4))',
+                animation: 'float 3s ease-in-out infinite'
+              }}
+            />
           </div>
           <h1 className="text-2xl font-bold text-foreground">{getPageTitle()}</h1>
         </div>
@@ -142,6 +159,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
           <span className="hidden sm:inline">Logout</span>
         </Button>
       </div>
+
+      {/* CSS Animation for floating effect */}
+      <style>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-5px);
+          }
+        }
+      `}</style>
     </header>
   );
-}
+          }
