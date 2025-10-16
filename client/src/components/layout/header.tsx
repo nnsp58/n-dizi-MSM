@@ -52,46 +52,44 @@ export default function Header({ onMenuClick }: HeaderProps) {
     <header className="bg-card border-b border-border px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
       <div className="flex items-center gap-3">
         {/* Mobile menu button */}
-        <Button 
-          variant="outline" 
-          size="icon" 
+        <Button
+          variant="outline"
+          size="icon"
           className="lg:hidden border-2 border-primary/20 hover:border-primary hover:bg-primary/10 transition-all"
           onClick={onMenuClick}
           data-testid="button-menu-toggle"
         >
           <i className="fas fa-bars text-xl text-primary"></i>
         </Button>
-        
-        {/* MSM Monogram Logo with animation - Mobile */}
+
+        {/* MSM Monogram Logo with smooth animation - Mobile */}
         <div className="lg:hidden flex items-center gap-2">
           <img
             src="/n-dizi-msm/n-dizi-mono.png"
             alt="MSM Logo"
-            className="w-10 h-10 rounded-lg shadow-md object-contain animate-pulse"
+            className="w-10 h-10 rounded-lg bg-[#0f172a]/80 p-1 shadow-md object-contain animate-pulse transition-transform hover:scale-110"
           />
           <div className="flex flex-col">
             <span className="font-bold text-foreground text-base leading-tight">MSM</span>
             <span className="text-[10px] text-muted-foreground leading-tight">Store Management</span>
           </div>
         </div>
-        
+
         {/* Desktop Page Title with Icon */}
         <div className="hidden lg:flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
             <i className={`fas ${getPageIcon()} text-primary text-lg`}></i>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {getPageTitle()}
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">{getPageTitle()}</h1>
         </div>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Notifications Button - Mobile */}
-        <Button 
-          onClick={() => window.location.href = '/alerts'}
-          variant="ghost" 
-          size="icon" 
+        <Button
+          onClick={() => (window.location.href = '/alerts')}
+          variant="ghost"
+          size="icon"
           className="lg:hidden relative hover:bg-primary/10"
           data-testid="button-notifications-mobile"
         >
@@ -108,20 +106,22 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         {/* Alerts Badge - Desktop */}
         {totalAlerts > 0 && (
-          <Button 
-            onClick={() => window.location.href = '/alerts'}
+          <Button
+            onClick={() => (window.location.href = '/alerts')}
             variant="outline"
             size="sm"
             className="hidden lg:flex items-center gap-2 border-red-200 bg-red-50 hover:bg-red-100 text-red-600"
             data-testid="button-alerts-desktop"
           >
             <i className="fas fa-bell animate-pulse"></i>
-            <span className="font-semibold">{totalAlerts} Alert{totalAlerts > 1 ? 's' : ''}</span>
+            <span className="font-semibold">
+              {totalAlerts} Alert{totalAlerts > 1 ? 's' : ''}
+            </span>
           </Button>
         )}
 
         {/* Share button */}
-        <Button 
+        <Button
           onClick={() => PWAUtils.shareApp()}
           variant="secondary"
           size="sm"
@@ -133,7 +133,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         </Button>
 
         {/* Logout button */}
-        <Button 
+        <Button
           onClick={logout}
           variant="destructive"
           size="sm"
@@ -146,4 +146,4 @@ export default function Header({ onMenuClick }: HeaderProps) {
       </div>
     </header>
   );
-            }
+}
