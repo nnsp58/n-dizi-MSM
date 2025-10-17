@@ -33,15 +33,8 @@ function Router() {
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const handleOpenSidebar = useCallback(() => setIsSidebarOpen(true), []);
 
-  // ✅ NEW: local state to prevent AuthPage from resetting (for Forgot Password flow)
-  const [showAuthPage, setShowAuthPage] = useState(!isAuthenticated);
-
-  useEffect(() => {
-    // Update only when authentication changes (not on internal state changes)
-    setShowAuthPage(!isAuthenticated);
-  }, [isAuthenticated]);
-
-  if (showAuthPage) {
+  // ✅ Auth guard — show AuthPage only when user not logged in
+  if (!isAuthenticated) {
     return <AuthPage />;
   }
 
@@ -92,25 +85,22 @@ function Router() {
 }
 
 function App() {
-  const loadProducts = useInventoryStore(state => state.loadProducts);
-  const loadTransactions = useTransactionStore(state => state.loadTransactions);
+  const loadProducts = useInventoryStore((s) => s.loadProducts);
+  const loadTransactions = useTransactionStore((s) => s.loadTransactions);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         await db.init();
-
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
         if (isAuthenticated) {
           await Promise.all([loadProducts(), loadTransactions()]);
         }
-
         await PWAUtils.registerServiceWorker();
-      } catch (error) {
-        console.error("Failed to initialize app:", error);
+      } catch (err) {
+        console.error("Init failed:", err);
       }
     };
-
     initializeApp();
   }, [loadProducts, loadTransactions]);
 
