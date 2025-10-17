@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PWAUtils } from '@/lib/pwa-utils';
-import { STORE_TYPE_LABELS } from '@shared/schema'; // ✅ adjust path if needed
+import { STORE_TYPE_LABELS } from '@shared/schema'; // ✅ ensure correct path
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,7 +26,6 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       let success = false;
       if (isLogin) {
@@ -61,7 +60,6 @@ export default function AuthPage() {
         return;
       }
 
-      // ✅ use Supabase reset password API
       const { error } = await window.supabase.auth.resetPasswordForEmail(formData.email);
       if (!error) {
         PWAUtils.showToast('Password reset link sent to your email!', 'success');
@@ -85,10 +83,11 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center p-4"
       style={{ background: 'linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(271 76% 53%) 100%)' }}>
       <div className="w-full max-w-md">
+        {/* Branding Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-2xl shadow-lg mb-4 overflow-hidden">
             <img
-              src="/mono.png" // ✅ fixed path
+              src="/mono.png"
               alt="n-dizi.in"
               className="w-20 h-20 object-contain"
               style={{
@@ -101,6 +100,7 @@ export default function AuthPage() {
           <p className="text-white/90 text-sm">Complete shop management solution</p>
         </div>
 
+        {/* Auth Card */}
         <Card className="bg-white rounded-xl shadow-2xl">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-foreground">
@@ -115,6 +115,7 @@ export default function AuthPage() {
 
           <CardContent>
             {isForgotPassword ? (
+              // 🔹 Forgot Password Form
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 <Label>Email *</Label>
                 <Input
@@ -137,56 +138,72 @@ export default function AuthPage() {
                 </Button>
               </form>
             ) : (
+              // 🔹 Login / Signup Form
               <form onSubmit={handleSubmit} className="space-y-4">
                 {!isLogin && (
                   <>
-                    {/* Signup fields */}
-                    {/* ... same as your original ... */}
+                    <div className="space-y-2">
+                      <Label htmlFor="storeName">Store Name *</Label>
+                      <Input
+                        id="storeName"
+                        type="text"
+                        placeholder="Narayan Digital Hub"  // ✅ updated default name
+                        value={formData.storeName}
+                        onChange={(e) => handleInputChange('storeName', e.target.value)}
+                        required={!isLogin}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Store Type</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {Object.entries(STORE_TYPE_LABELS).map(([type, label]) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => handleInputChange('storeType', type)}
+                            className={`p-2 rounded-lg border-2 transition-all text-xs font-medium ${
+                              formData.storeType === type
+                                ? 'border-primary bg-primary/10 text-primary'
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                          >
+                            <div className="text-center">
+                              <div className="text-lg mb-0.5">
+                                {type === 'medical' && '💊'}
+                                {type === 'provision' && '🛒'}
+                                {type === 'retail' && '🏪'}
+                                {type === 'general' && '🏬'}
+                                {type === 'digital' && '💻'} {/* ✅ added digital icon */}
+                              </div>
+                              <div className="text-[10px] leading-tight">{label}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Select your store type to get relevant product units
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="ownerName">Your Name *</Label>
+                      <Input
+                        id="ownerName"
+                        type="text"
+                        placeholder="John Doe"
+                        value={formData.ownerName}
+                        onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                        required={!isLogin}
+                      />
+                    </div>
                   </>
                 )}
 
-                {/* Common fields */}
-                {/* ... email + password fields same as yours ... */}
-
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
-                </Button>
-              </form>
-            )}
-
-            {!isForgotPassword && (
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {isLogin ? "Don't have an account? " : "Already have an account? "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLogin(!isLogin);
-                      setFormData({
-                        email: '', password: '', storeName: '', storeType: 'general', ownerName: '', phone: '', address: ''
-                      });
-                    }}
-                    className="text-primary font-semibold hover:underline"
-                  >
-                    {isLogin ? 'Sign Up' : 'Sign In'}
-                  </button>
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="mt-8 text-center">
-          <p className="text-white/80 text-sm">Presented by <span className="font-semibold">n-dizi</span></p>
-        </div>
-      </div>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0); }
-          50% { transform: translateY(-8px) rotate(5deg); }
-        }
-      `}</style>
-    </div>
-  );
-}
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="your@email.com"
+                    value={formDa
