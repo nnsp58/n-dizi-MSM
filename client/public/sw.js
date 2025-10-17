@@ -7,6 +7,8 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/mono.png',
+  '/fallback-logo.svg',
   // Core app files will be added by the build process
 ];
 

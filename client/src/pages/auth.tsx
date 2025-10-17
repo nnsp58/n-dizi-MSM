@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PWAUtils } from "@/lib/pwa-utils";
+import { t } from "@/lib/i18n";
 import { STORE_TYPE_LABELS } from "@shared/schema";
 
 export default function AuthPage() {
@@ -82,7 +83,7 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-24 h-24 bg-white rounded-2xl shadow-lg mb-4 overflow-hidden">
             <img src="/mono.png" alt="n-dizi.in"
-              className="w-20 h-20 object-contain"
+              className="w-20 h-20 object-contain" onError={(e)=>{ (e.currentTarget as HTMLImageElement).src = '/fallback-logo.svg' }}ntain"
               style={{
                 filter: "drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))",
                 animation: "float 3s ease-in-out infinite",
@@ -95,13 +96,13 @@ export default function AuthPage() {
         <Card className="bg-white rounded-xl shadow-2xl relative">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">
-              {isForgotPassword ? "Reset Password" : isLogin ? "Welcome Back" : "Create Account"}
+              {isForgotPassword ? "Reset Password" : isLogin ? "{t("welcomeBack")}" : "Create Account"}
             </CardTitle>
             <CardDescription>
               {isForgotPassword
                 ? "Enter your email to receive a password reset link"
                 : isLogin
-                ? "Sign in to your account"
+                ? "{t("signInToAccount")}"
                 : "Set up your store account"}
             </CardDescription>
           </CardHeader>
@@ -192,7 +193,7 @@ export default function AuthPage() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
+                  {loading ? "Please wait..." : isLogin ? "{t("signIn")}" : "Create Account"}
                 </Button>
               </form>
             )}
@@ -210,7 +211,7 @@ export default function AuthPage() {
                       });
                     }}
                     className="text-primary font-semibold hover:underline">
-                    {isLogin ? "Sign Up" : "Sign In"}
+                    {isLogin ? "{t("signUp")}" : "{t("signIn")}"}
                   </button>
                 </p>
               </div>

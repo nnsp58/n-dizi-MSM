@@ -69,7 +69,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* N-Dizi Animated Logo */}
         <div className="lg:hidden flex items-center gap-2">
           <div className="w-12 h-12 flex items-center justify-center">
-            <img 
+            <img onError={(e)=>{ (e.currentTarget as HTMLImageElement).src = '/fallback-logo.svg' }} 
               src="/n-dizi-MSM/mono.png" 
               alt="n-dizi.in" 
               className="w-12 h-12 object-contain animate-pulse hover:animate-spin transition-all duration-300"
@@ -89,7 +89,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="hidden lg:flex items-center gap-3">
           {/* N-Dizi Logo on Desktop */}
           <div className="w-10 h-10 flex items-center justify-center">
-            <img 
+            <img onError={(e)=>{ (e.currentTarget as HTMLImageElement).src = '/fallback-logo.svg' }} 
               src="/n-dizi-MSM/mono.png" 
               alt="n-dizi.in" 
               className="w-10 h-10 object-contain animate-pulse"
