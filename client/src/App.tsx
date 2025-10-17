@@ -30,15 +30,18 @@ function Router() {
   const { isAuthenticated } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const handleCloseSidebar = useCallback(() => {
-    setIsSidebarOpen(false);
-  }, []);
+  const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
+  const handleOpenSidebar = useCallback(() => setIsSidebarOpen(true), []);
 
-  const handleOpenSidebar = useCallback(() => {
-    setIsSidebarOpen(true);
-  }, []);
+  // ✅ NEW: local state to prevent AuthPage from resetting (for Forgot Password flow)
+  const [showAuthPage, setShowAuthPage] = useState(!isAuthenticated);
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    // Update only when authentication changes (not on internal state changes)
+    setShowAuthPage(!isAuthenticated);
+  }, [isAuthenticated]);
+
+  if (showAuthPage) {
     return <AuthPage />;
   }
 
@@ -63,18 +66,20 @@ function Router() {
             <Route path="/admin/feedback" component={AdminFeedbackManagement} />
             <Route component={Dashboard} />
           </Switch>
-          
+
           {/* Footer */}
           <footer className="bg-card border-t border-border mt-12 py-6">
             <div className="px-4 md:px-8 text-center">
               <p className="text-muted-foreground text-sm">
-                Presented by <span className="font-semibold text-foreground">n-dizi.in</span> | 
-                <button 
-                  onClick={() => PWAUtils.shareApp()} 
+                Presented by{" "}
+                <span className="font-semibold text-foreground">n-dizi.in</span> |
+                <button
+                  onClick={() => PWAUtils.shareApp()}
                   className="text-primary hover:underline mx-2"
                 >
                   Share App
-                </button> |
+                </button>
+                |
                 <span className="mx-2">Version 1.0.0</span>
               </p>
             </div>
@@ -93,22 +98,16 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize database
         await db.init();
-        
-        // Load data if authenticated
+
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
         if (isAuthenticated) {
-          await Promise.all([
-            loadProducts(),
-            loadTransactions()
-          ]);
+          await Promise.all([loadProducts(), loadTransactions()]);
         }
-        
-        // Register service worker
+
         await PWAUtils.registerServiceWorker();
       } catch (error) {
-        console.error('Failed to initialize app:', error);
+        console.error("Failed to initialize app:", error);
       }
     };
 
