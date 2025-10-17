@@ -1,9 +1,16 @@
-import { createRoot } from "react-dom/client";
+import React from "react";
+import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { PWAUtils } from "./lib/pwa-utils";
 
-createRoot(document.getElementById("root")!).render(<App />);
+const root = ReactDOM.createRoot(document.getElementById("root")!);
+root.render(<App />);
 
-PWAUtils.registerServiceWorker();
-PWAUtils.setupInstallPrompt();
+// ✅ Register Service Worker
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((err) => {
+      console.error("SW registration failed:", err);
+    });
+  });
+}
