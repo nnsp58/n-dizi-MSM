@@ -1,109 +1,65 @@
-import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import express from "express";
+import cors from "cors";
+import bodyParser from "body-parser";
+import jwt from "jsonwebtoken";
+import sqlite3 from "sqlite3";
+import { open } from "sqlite";
 
 const app = express();
+app.use(cors());
+app.use(bodyParser.json());
 
-declare module 'express-session' {
-  interface SessionData {
-    userId?: string;
-  }
-}
+const SECRET_KEY = "n_dizi_secret_key_2025";
 
-declare module 'http' {
-  interface IncomingMessage {
-    rawBody: unknown
-  }
-}
-app.use(express.json({
-  verify: (req, _res, buf) => {
-    req.rawBody = buf;
-  }
-}));
-app.use(express.urlencoded({ extended: false }));
-
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "ndizi-store-secret-key-change-in-prod",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === "production" ? 'strict' : 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 7,
-    },
-  })
-);
-
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
-});
-
+// 🧠 Connect SQLite
+let db: any;
 (async () => {
-  const server = await registerRoutes(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
+  db = await open({
+    filename: "./store.db",
+    driver: sqlite3.Database,
   });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-    // Only start server if not in Vercel (serverless) environment
-  if (!process.env.VERCEL) {
-    const port = parseInt(process.env.PORT || '5000', 10);
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`serving on port ${port}`);
-    });
-  }
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE,
+      password TEXT
+    )
+  `);
 })();
 
-// Export for Vercel serverless
-export default app;
-    
+// 🧩 Signup
+app.post("/api/auth/signup", async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    await db.run("INSERT INTO users (email, password) VALUES (?, ?)", [email, password]);
+    res.json({ success: true, message: "User registered successfully" });
+  } catch (err) {
+    res.status(400).json({ success: false, message: "User already exists" });
+  }
+});
+
+// 🔐 Login
+app.post("/api/auth/login", async (req, res) => {
+  const { email, password } = req.body;
+  const user = await db.get("SELECT * FROM users WHERE email=? AND password=?", [email, password]);
+  if (user) {
+    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "2h" });
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+});
+
+// 🔎 Verify token
+app.get("/api/auth/verify", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(403).json({ success: false, message: "No token provided" });
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    res.json({ success: true, user: decoded });
+  } catch {
+    res.status(401).json({ success: false, message: "Invalid token" });
+  }
+});
+
+app.listen(3000, () => console.log("✅ Server running on http://localhost:3000"));
