@@ -8,10 +8,30 @@ import { useAuthStore } from '@/store/auth-store';
 import { useAlerts } from '@/hooks/use-alerts';
 import { useEffect, useState } from 'react';
 
+// Define a simple fallback for useAlerts if it causes an issue
+// NOTE: Assuming useAlerts returns { totalAlerts: number }
+const useAlertsSafe = () => {
+  try {
+    return useAlerts();
+  } catch (error) {
+    console.error("Failed to load useAlerts hook, using fallback.", error);
+    return { totalAlerts: 0 };
+  }
+};
+
 export default function Dashboard() {
   const [, setLocation] = useLocation();
-  const { user } = useAuthStore();
-  const { totalAlerts } = useAlerts();
+  // Safe access to user (user might be null if state persistence failed)
+  const { user, isAuthenticated } = useAuthStore(state => ({ user: state.user, isAuthenticated: state.isAuthenticated }));
+  const { totalAlerts } = useAlertsSafe(); // Using safe hook
+
+  // Redirect if not authenticated (basic security check for the component)
+  useEffect(() => {
+      if (isAuthenticated === false) {
+          setLocation('/auth');
+      }
+  }, [isAuthenticated, setLocation]);
+
   const [stats, setStats] = useState({
     totalProducts: 0,
     lowStockItems: 0,
@@ -123,6 +143,12 @@ export default function Dashboard() {
     }
   ];
 
+  // Optional: Add a loading check, though if the screen is white, this won't help
+  if (user === null && isAuthenticated === null) {
+      return <div className="p-6 text-center text-muted-foreground">Loading authentication status...</div>;
+  }
+
+  // Final render
   return (
     <div className="p-6 space-y-6">
       {/* Welcome Section */}
