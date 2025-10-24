@@ -12,7 +12,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuthStore();
+  // Safe access to user and logout
+  const { user, logout } = useAuthStore(state => ({ user: state.user, logout: state.logout }));
   const { totalAlerts } = useAlerts();
 
   useEffect(() => {
