@@ -5,8 +5,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PWAUtils } from "@/lib/pwa-utils";
-// import { t } from "@/lib/i18n"; // Removed the invalid i18n syntax from the component
-import { STORE_TYPE_LABELS } from "@shared/schema";
+// import { t } from "@/lib/i18n"; // REMOVED: This was causing syntax issues
+// import { STORE_TYPE_LABELS } from "@shared/schema"; // REMOVED: Importing directly to avoid path issues
+
+// Inlined STORE_TYPE_LABELS for stability. If this fixes the white screen, 
+// the issue was with the @shared/schema path/file existence.
+const STORE_TYPE_LABELS = {
+  medical: "Medical/Pharmacy",
+  provision: "Provision/Grocery",
+  retail: "General Retail Store",
+  general: "Other General Store",
+  digital: "Digital Products/Services",
+};
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,7 +30,7 @@ export default function AuthPage() {
     storeName: "",
     storeType: "general",
     ownerName: "",
-    phone: "", // Added to formData
+    phone: "",
     address: "",
   });
 
@@ -33,10 +43,8 @@ export default function AuthPage() {
     try {
       let success = false;
       if (isLogin) {
-        // Attempt Login
         success = await login(formData.email, formData.password);
       } else {
-        // Attempt Signup
         if (!formData.storeName || !formData.ownerName || !formData.phone || !formData.address) {
           PWAUtils.showToast("Please fill all required fields (Store Name, Owner Name, Phone, Address)", "error");
           setLoading(false);
@@ -47,15 +55,12 @@ export default function AuthPage() {
       
       if (success) {
         PWAUtils.showToast(isLogin ? "Login successful! Redirecting..." : "Account created successfully! Redirecting...", "success");
-        // State change in useAuthStore should handle automatic redirection
       } else {
-        // Specific error handling based on operation
         let errorMessage = "An error occurred. Please try again.";
         if (isLogin) {
           errorMessage = "Login Failed: Invalid Email or Password.";
         } else {
-          // Based on auth-store.ts, failure here means email exists or backend error.
-          errorMessage = "Signup Failed: This email is already in use or backend registration failed.";
+          errorMessage = "Signup Failed: This email is already in use or registration failed.";
         }
         PWAUtils.showToast(errorMessage, "error");
       }
@@ -76,8 +81,7 @@ export default function AuthPage() {
         setLoading(false);
         return;
       }
-      // Assuming 'window.supabase' is globally available
-      // Note: This function requires a working Supabase setup to send the email.
+      // NOTE: This relies on a global 'window.supabase' object.
       const { error } = await window.supabase.auth.resetPasswordForEmail(formData.email);
       if (!error) {
         PWAUtils.showToast("Password reset link sent to your email!", "success");
@@ -184,13 +188,13 @@ export default function AuthPage() {
                         required />
                     </div>
                     
-                    {/* New: Mobile Number Field */}
+                    {/* Mobile Number Field */}
                     <div className="space-y-2">
                       <Label>Mobile Number *</Label>
                       <Input type="tel" placeholder="9876543210"
                         value={formData.phone}
                         onChange={(e) => handleInputChange("phone", e.target.value)}
-                        required // Made required as per request
+                        required
                       />
                     </div>
                     
