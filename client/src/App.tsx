@@ -26,24 +26,40 @@ import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FeedbackModal from "@/components/modals/feedback-modal";
 
-function Router() {
+// Router component now handles loading state explicitly
+function Router({ isAppInitialized }: { isAppInitialized: boolean }) {
   const { isAuthenticated } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const handleOpenSidebar = useCallback(() => setIsSidebarOpen(true), []);
 
-  // ✅ Auth guard — show AuthPage only when user not logged in
+  // Show a loading screen while the app state (DB/Auth) is being initialized
+  if (!isAppInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="text-center p-8">
+          <i className="fas fa-spinner fa-spin text-4xl text-primary mb-4"></i>
+          <p className="text-lg font-medium">Loading store data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Auth guard — show AuthPage only when user not logged in
   if (!isAuthenticated) {
     return <AuthPage />;
   }
 
+  // Main authenticated layout
   return (
     <div className="min-h-screen flex bg-background">
+      {/* Sidebar is hidden on small screens by default */}
       <Sidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} />
       <div className="flex-1 overflow-hidden">
         <Header onMenuClick={handleOpenSidebar} />
-        <main className="overflow-auto h-[calc(100vh-4rem)]">
+        {/* Main content area takes up the remaining height */}
+        <main className="overflow-y-auto h-[calc(100vh-4rem)]">
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/inventory" component={Inventory} />
@@ -57,7 +73,8 @@ function Router() {
             <Route path="/feedback" component={Feedback} />
             <Route path="/admin/dashboard" component={AdminDashboard} />
             <Route path="/admin/feedback" component={AdminFeedbackManagement} />
-            <Route component={Dashboard} />
+            {/* Fallback route */}
+            <Route component={Dashboard} /> 
           </Switch>
 
           {/* Footer */}
@@ -85,20 +102,51 @@ function Router() {
 }
 
 function App() {
+  const [isAppInitialized, setIsAppInitialized] = useState(false);
   const loadProducts = useInventoryStore((s) => s.loadProducts);
   const loadTransactions = useTransactionStore((s) => s.loadTransactions);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // 1. Initialize the local database (crucial step)
         await db.init();
+        
+        // 2. Wait for the Auth Store (which is persisted) to rehydrate from local storage
+        // This is a temporary check for Zustand's persistence mechanism:
+        // We wait until the store is considered ready by the middleware.
+        await new Promise<void>((resolve) => {
+          if (useAuthStore.persist.get  ) {
+            if (useAuthStore.persist.get  ().hasHydrated) {
+              resolve();
+            } else {
+              const unsubscribe = useAuthStore.persist.get  ().onFinishHydration(() => {
+                unsubscribe();
+                resolve();
+              });
+            }
+          } else {
+            // Fallback for non-persisted state or if getPersist is undefined
+            setTimeout(resolve, 300); 
+          }
+        });
+
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
+        
+        // 3. Load other large data only if authenticated
         if (isAuthenticated) {
+          // This will run after persistence is guaranteed to be loaded
           await Promise.all([loadProducts(), loadTransactions()]);
         }
+        
+        // 4. Final step: register PWA service worker and mark initialized
         await PWAUtils.registerServiceWorker();
+
       } catch (err) {
-        console.error("Init failed:", err);
+        console.error("Critical initialization failed (DB or Auth Store):", err);
+        // If critical init fails, we still set initialized to show AuthPage/error
+      } finally {
+        setIsAppInitialized(true);
       }
     };
     initializeApp();
@@ -108,7 +156,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <Router isAppInitialized={isAppInitialized} />
       </TooltipProvider>
     </QueryClientProvider>
   );
