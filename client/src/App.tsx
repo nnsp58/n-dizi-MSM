@@ -74,11 +74,14 @@ function Router({ isAppInitialized }: { isAppInitialized: boolean }) {
   const { isAuthenticated } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  console.log('[Router] Render - isAppInitialized:', isAppInitialized, 'isAuthenticated:', isAuthenticated);
+
   const handleCloseSidebar = useCallback(() => setIsSidebarOpen(false), []);
   const handleOpenSidebar = useCallback(() => setIsSidebarOpen(true), []);
 
   // Show a loading screen while the app state (DB/Auth) is being initialized
   if (!isAppInitialized) {
+    console.log('[Router] Showing loading screen');
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
         <div className="text-center p-8">
@@ -91,8 +94,11 @@ function Router({ isAppInitialized }: { isAppInitialized: boolean }) {
 
   // Auth guard — show AuthPage only when user not logged in
   if (!isAuthenticated) {
+    console.log('[Router] User not authenticated, showing AuthPage');
     return <AuthPage />;
   }
+
+  console.log('[Router] User authenticated, showing main layout');
 
   // Main authenticated layout
   return (
@@ -152,29 +158,46 @@ function App() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        console.log('[App] Starting initialization...');
+        
         // 1. Initialize the local database (crucial step)
+        console.log('[App] Initializing database...');
         await db.init();
+        console.log('[App] Database initialized successfully');
         
         // 2. Wait for the Auth Store to rehydrate from local storage
         // Simple delay to ensure Zustand persist middleware has loaded
+        console.log('[App] Waiting for auth store hydration...');
         await new Promise(resolve => setTimeout(resolve, 100));
 
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
+        console.log('[App] Auth status:', isAuthenticated);
         
         // 3. Load other large data only if authenticated
         if (isAuthenticated) {
+          console.log('[App] Loading products and transactions...');
           // This will run after persistence is guaranteed to be loaded
           await Promise.all([loadProducts(), loadTransactions()]);
+          console.log('[App] Products and transactions loaded');
         }
         
         // 4. Final step: register PWA service worker and mark initialized
+        console.log('[App] Registering service worker...');
         await PWAUtils.registerServiceWorker();
+        console.log('[App] Service worker registered');
+        
+        console.log('[App] Initialization complete!');
 
       } catch (err) {
         console.error("Critical initialization failed (DB or Auth Store):", err);
+        // Log full error stack
+        if (err instanceof Error) {
+          console.error('Error stack:', err.stack);
+        }
         // If critical init fails, we still set initialized to show AuthPage/error
       } finally {
         setIsAppInitialized(true);
+        console.log('[App] App initialized flag set to true');
       }
     };
     initializeApp();
