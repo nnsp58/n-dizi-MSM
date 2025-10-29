@@ -23,6 +23,7 @@ import Feedback from "@/pages/feedback";
 import AdminFeedbackManagement from "@/pages/admin/feedback-management";
 import AdminDashboard from "@/pages/admin/dashboard";
 import Sidebar from "@/components/layout/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import Header from "@/components/layout/header";
 import FeedbackModal from "@/components/modals/feedback-modal";
 
@@ -102,37 +103,38 @@ function Router({ isAppInitialized }: { isAppInitialized: boolean }) {
 
   // Main authenticated layout
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* Sidebar is hidden on small screens by default */}
-      <Sidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} />
-      <div className="flex-1 overflow-hidden">
-        <Header onMenuClick={handleOpenSidebar} />
-        {/* Main content area takes up the remaining height */}
-        <main className="overflow-y-auto h-[calc(100vh-4rem)]">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/inventory" component={Inventory} />
-            <Route path="/pos" component={POS} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/returns" component={Returns} />
-            <Route path="/alerts" component={Alerts} />
-            <Route path="/operators" component={Operators} />
-            <Route path="/subscription" component={Subscription} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/feedback" component={Feedback} />
-            <Route path="/admin/dashboard" component={AdminDashboard} />
-            <Route path="/admin/feedback" component={AdminFeedbackManagement} />
-            {/* Fallback route */}
-            <Route component={Dashboard} /> 
-          </Switch>
+    <SidebarProvider>
+      <div className="min-h-screen flex bg-background">
+        {/* Sidebar is hidden on small screens by default */}
+        <Sidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} />
+        <div className="flex-1 overflow-hidden">
+          <Header onMenuClick={handleOpenSidebar} />
+          {/* Main content area takes up the remaining height */}
+          <main className="overflow-y-auto h-[calc(100vh-4rem)]">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/inventory" component={Inventory} />
+              <Route path="/pos" component={POS} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/returns" component={Returns} />
+              <Route path="/alerts" component={Alerts} />
+              <Route path="/operators" component={Operators} />
+              <Route path="/subscription" component={Subscription} />
+              <Route path="/settings" component={Settings} />
+              <Route path="/feedback" component={Feedback} />
+              <Route path="/admin/dashboard" component={AdminDashboard} />
+              <Route path="/admin/feedback" component={AdminFeedbackManagement} />
+              {/* Fallback route */}
+              <Route component={Dashboard} /> 
+            </Switch>
 
-          {/* Footer */}
-          <footer className="bg-card border-t border-border mt-12 py-6">
-            <div className="px-4 md:px-8 text-center">
-              <p className="text-muted-foreground text-sm">
-                Presented by{" "}
-                <span className="font-semibold text-foreground">n-dizi.in</span> |
-                <button
+            {/* Footer */}
+            <footer className="bg-card border-t border-border mt-12 py-6">
+              <div className="px-4 md:px-8 text-center">
+                <p className="text-muted-foreground text-sm">
+                  Presented by{" "}
+                  <span className="font-semibold text-foreground">n-dizi.in</span> |
+                  <button
                   onClick={() => PWAUtils.shareApp()}
                   className="text-primary hover:underline mx-2"
                 >
@@ -147,6 +149,7 @@ function Router({ isAppInitialized }: { isAppInitialized: boolean }) {
       </div>
       <FeedbackModal />
     </div>
+    </SidebarProvider>
   );
 }
 
