@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Component, ErrorInfo, ReactNode } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -25,6 +25,49 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FeedbackModal from "@/components/modals/feedback-modal";
+
+// Error Boundary Component
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Error Boundary caught an error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+          <div className="max-w-md w-full bg-card border border-border rounded-lg p-6 text-center">
+            <div className="text-destructive text-5xl mb-4">⚠️</div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Something went wrong</h1>
+            <p className="text-muted-foreground mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90"
+            >
+              Reload Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 // Router component now handles loading state explicitly
 function Router({ isAppInitialized }: { isAppInitialized: boolean }) {
@@ -112,36 +155,9 @@ function App() {
         // 1. Initialize the local database (crucial step)
         await db.init();
         
-        // 2. Wait for the Auth Store (which is persisted) to rehydrate from local storage
-        // This is a temporary check for Zustand's persistence mechanism:
-        // We wait until the store is considered ready by the middleware.
-        await new Promise<void>((resolve) => {
-          const persistAPI = useAuthStore.persist;
-          if (persistAPI && persistAPI.getOptions) {
-            // Check if already hydrated
-            const state = persistAPI.getOptions();
-            if (state && (state as any).hasHydrated) {
-              resolve();
-            } else {
-              // Wait for hydration to complete
-              const checkHydration = setInterval(() => {
-                const currentState = persistAPI.getOptions();
-                if (currentState && (currentState as any).hasHydrated) {
-                  clearInterval(checkHydration);
-                  resolve();
-                }
-              }, 50);
-              // Timeout after 2 seconds
-              setTimeout(() => {
-                clearInterval(checkHydration);
-                resolve();
-              }, 2000);
-            }
-          } else {
-            // Fallback for non-persisted state or if persist API is undefined
-            setTimeout(resolve, 300); 
-          }
-        });
+        // 2. Wait for the Auth Store to rehydrate from local storage
+        // Simple delay to ensure Zustand persist middleware has loaded
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         const isAuthenticated = useAuthStore.getState().isAuthenticated;
         
@@ -165,12 +181,14 @@ function App() {
   }, [loadProducts, loadTransactions]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router isAppInitialized={isAppInitialized} />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Router isAppInitialized={isAppInitialized} />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
