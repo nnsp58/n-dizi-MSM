@@ -116,17 +116,29 @@ function App() {
         // This is a temporary check for Zustand's persistence mechanism:
         // We wait until the store is considered ready by the middleware.
         await new Promise<void>((resolve) => {
-          if (useAuthStore.persist.get  ) {
-            if (useAuthStore.persist.get  ().hasHydrated) {
+          const persistAPI = useAuthStore.persist;
+          if (persistAPI && persistAPI.getOptions) {
+            // Check if already hydrated
+            const state = persistAPI.getOptions();
+            if (state && (state as any).hasHydrated) {
               resolve();
             } else {
-              const unsubscribe = useAuthStore.persist.get  ().onFinishHydration(() => {
-                unsubscribe();
+              // Wait for hydration to complete
+              const checkHydration = setInterval(() => {
+                const currentState = persistAPI.getOptions();
+                if (currentState && (currentState as any).hasHydrated) {
+                  clearInterval(checkHydration);
+                  resolve();
+                }
+              }, 50);
+              // Timeout after 2 seconds
+              setTimeout(() => {
+                clearInterval(checkHydration);
                 resolve();
-              });
+              }, 2000);
             }
           } else {
-            // Fallback for non-persisted state or if getPersist is undefined
+            // Fallback for non-persisted state or if persist API is undefined
             setTimeout(resolve, 300); 
           }
         });
